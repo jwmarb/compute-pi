@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <gmp.h>
+#include <chrono>
 
 // how many decimal digits the algorithm generates per iteration:
 #define DIGITS_PER_ITERATION log10(151931373056000) // https://mathoverflow.net/questions/261162/chudnovsky-algorithm-and-pi-precision
@@ -81,7 +82,6 @@ void chudnovsky(mpf_t sum, unsigned long long digits) {
 }
 
 int main() {
-  
   unsigned long digits;
   printf("num of digits: ");
   scanf("%lu", &digits);
@@ -89,24 +89,37 @@ int main() {
   FILE* file;
   mpf_t sum, shift;
   mpz_t c;
+  auto s = std::chrono::steady_clock::now();
   chudnovsky(sum, digits);
+  auto e = std::chrono::steady_clock::now();
+  double elapsed_time = std::chrono::duration_cast<std::chrono::duration<double>>(e - s).count();
+  printf("\tCalculating %lu digits of pi took %.2f seconds\n\n", digits, elapsed_time);
 
+  s = std::chrono::steady_clock::now();
   mpz_init(c);
   mpf_init(shift);
   mpf_set_ui(shift, 10);
   mpf_pow_ui(shift, shift, digits);
-  
   mpf_mul(sum, sum, shift);
   mpz_set_f(c, sum);
+  e = std::chrono::steady_clock::now();
+  elapsed_time = std::chrono::duration_cast<std::chrono::duration<double>>(e - s).count();
+  printf("\tInteger conversion took %.2f seconds\n\n", elapsed_time);
+  
 
   double bytes_used = 
     mpz_sizeinbase(c, 2)/8.0  // get bits that c uses up and divides by 8 to get bytes
     + 4;                    // 4 bytes are used to represent the size of mpz_t
-  printf("%.2f bytes written in \"pi.bin\"\n", bytes_used);
+  printf("\t%.2f bytes written in \"pi.bin\"\n\n", bytes_used);
 
   file = fopen("pi.bin", "w");
+
+  s = std::chrono::steady_clock::now();
   mpz_out_raw(file, c);
   fclose(file);
+  e = std::chrono::steady_clock::now();
+  elapsed_time = std::chrono::duration_cast<std::chrono::duration<double>>(e - s).count();
+  printf("\tWriting binary file took %.2f seconds\n\n", elapsed_time);
 
   return 0;
 }

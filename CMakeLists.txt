@@ -16,6 +16,6 @@ include_directories(${PROJECT_NAME} ${GMP_INC_PATH})
 
 include_directories(${PROJECT_NAME} ${FMT_INC_PATH})
 
-add_executable(${PROJECT_NAME} src/main.c)
+add_executable(${PROJECT_NAME} src/main.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${FMT_LIB_PATH})
