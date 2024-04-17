@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.29.0)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+
 set(FMT_INC_PATH /usr/local/vcpkg/packages/fmt_x64-linux/include)
 set(FMT_LIB_PATH /usr/local/vcpkg/packages/fmt_x64-linux/lib/libfmt.a)
 
