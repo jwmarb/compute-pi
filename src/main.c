@@ -81,7 +81,11 @@ void chudnovsky(mpf_t sum, unsigned long long digits) {
 }
 
 int main() {
-  unsigned long digits = 100;
+  
+  unsigned long digits;
+  printf("num of digits: ");
+  scanf("%lu", &digits);
+  printf("\n");
   FILE* file;
   mpf_t sum, shift;
   mpz_t c;
