@@ -35,9 +35,9 @@ From: ubuntu:22.04
   make
   
   # GMP Optimizations
-  cd tune
-  make tuneup
-  ./tuneup
+  # cd tune
+  # make tuneup
+  # ./tuneup
 
 %environment
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
