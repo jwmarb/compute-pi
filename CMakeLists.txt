@@ -1,12 +1,18 @@
-cmake_minimum_required(VERSION 3.29.2)
+cmake_minimum_required(VERSION 3.29.0)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQURIED ON)
+set(FMT_INC_PATH /usr/local/vcpkg/packages/fmt_x64-linux/include)
+set(FMT_LIB_PATH /usr/local/vcpkg/packages/fmt_x64-linux/lib/libfmt.a)
 
-project(main)
+set(GMP_INC_PATH /usr/local/gmp-6.3.0/)
+set(GMP_LIB_PATH /usr/local/gmp-6.3.0/.libs/libgmp.a)
 
-file(GLOB_RECURSE SRC_FILES src/*.cpp)
+project(pi_calculator)
 
-add_compile_options(-O2)
+# find_package(fmt CONFIG REQUIRED)
+include_directories(${PROJECT_NAME} ${GMP_INC_PATH})
 
-add_executable(${CMAKE_PROJECT_NAME} ${SRC_FILES})
+include_directories(${PROJECT_NAME} ${FMT_INC_PATH})
+
+add_executable(${PROJECT_NAME} src/main.c)
+
+target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${FMT_LIB_PATH})
