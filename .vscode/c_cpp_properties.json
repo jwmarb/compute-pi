@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/ext/gmp-6.3.0"
+                "/usr/local/gmp-6.3.0"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
