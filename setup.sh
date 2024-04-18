@@ -1,30 +1,30 @@
 apt-get update
 apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4
 
-# CMake 3.29.2 installation
-CMAKE_VERSION=3.29.2
+# variables
+CWD=$(pwd)
+EXT=$CWD/ext
 
-cd /usr/local
-wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.sh
-chmod +x ./cmake-$CMAKE_VERSION-linux-x86_64.sh
-./cmake-$CMAKE_VERSION-linux-x86_64.sh --skip-license
-rm cmake-$CMAKE_VERSION-linux-x86_64.sh
+# setup
+mkdir $EXT
 
-# Install VCPKG
-cd /usr/local
-git clone https://github.com/microsoft/vcpkg.git
-cd vcpkg
-chmod +x ./bootstrap-vcpkg.sh
-./bootstrap-vcpkg.sh
-
-# Install FMT
-./vcpkg install fmt
-
-# Install GMP
-cd /usr/local
-wget https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.gz
-tar -xzf ./gmp-6.3.0.tar.gz
-rm gmp-6.3.0.tar.gz
-cd gmp-6.3.0
+# Install GMP headers
+GMP_VERSION=6.3.0
+cd $EXT
+wget https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.gz
+tar -xzf ./gmp-$GMP_VERSION.tar.gz
+rm gmp-$GMP_VERSION.tar.gz
+cd gmp-$GMP_VERSION
 ./configure
-make
+
+# Install MPI headers
+MPI_VERSION=5.0.3
+cd $EXT
+wget https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$MPI_VERSION.tar.bz2
+tar -jxpf openmpi-$MPI_VERSION.tar.bz2
+cd openmpi-$MPI_VERSION
+./configure --prefix=$EXT/openmpi
+make install
+cd ..
+rm openmpi-$MPI_VERSION.tar.bz2 # remove compressed file
+rm -rf openmpi-$MPI_VERSION # remove source
