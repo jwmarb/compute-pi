@@ -4,7 +4,7 @@ From: ubuntu:22.04
 %post
 
   apt-get update
-  apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4
+  apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4 python3
 
   # CMake 3.29.2 installation
   CMAKE_VERSION=3.29.2
@@ -14,35 +14,39 @@ From: ubuntu:22.04
   chmod +x ./cmake-$CMAKE_VERSION-linux-x86_64.sh
   ./cmake-$CMAKE_VERSION-linux-x86_64.sh --skip-license
   rm cmake-$CMAKE_VERSION-linux-x86_64.sh
-  
-  # Install VCPKG
-  cd /usr/local
-  git clone https://github.com/microsoft/vcpkg.git
-  cd vcpkg
-  chmod +x ./bootstrap-vcpkg.sh
-  ./bootstrap-vcpkg.sh
-
-  # Install FMT
-  ./vcpkg install fmt
 
   # Install GMP
+  GMP_VERSION=6.3.0
   cd /usr/local
-  wget https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.gz
-  tar -xzf ./gmp-6.3.0.tar.gz
-  rm gmp-6.3.0.tar.gz
-  cd gmp-6.3.0
-  ./configure
-  make
+  wget https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.gz
+  tar -xzf ./gmp-$GMP_VERSION.tar.gz
+  rm gmp-$GMP_VERSION.tar.gz
+  cd gmp-$GMP_VERSION
+  ./configure --enable-fat
+  make -j$(nproc)
   
   # GMP Optimizations
   # cd tune
-  # make tuneup
+  # make -j$(nproc) tuneup
   # ./tuneup
+
+  # Install MPI
+  MPI_VERSION=5.0.3
+  cd /usr/local
+  wget https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$MPI_VERSION.tar.bz2
+  tar -jxpf openmpi-$MPI_VERSION.tar.bz2
+  rm openmpi-$MPI_VERSION.tar.bz2 # remove compressed file
+  cd openmpi-$MPI_VERSION
+  ./configure --prefix=/usr/local/openmpi
+  make -j$(nproc) all
+  make install
+  cd ..
+  rm -rf openmpi-$MPI_VERSION # remove source
 
 %environment
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
-  export CMAKE_C_COMPILER=/usr/bin/gcc
-  export CMAKE_CXX_COMPILER=/usr/bin/g++
+  export CMAKE_C_COMPILER=/usr/local/openmpi/bin/mpicc
+  export CMAKE_CXX_COMPILER=/usr/local/openmpi/mpic++
   export VCPKG_ROOT=/usr/local/vcpkg
   export PATH=$VCPKG_ROOT:$PATH
 

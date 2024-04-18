@@ -85,7 +85,9 @@
     "numbers": "cpp",
     "semaphore": "cpp",
     "cinttypes": "cpp",
-    "gmp.h": "c"
+    "gmp.h": "c",
+    "stdio.h": "c",
+    "set": "cpp"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

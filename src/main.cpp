@@ -1,125 +1,74 @@
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <gmp.h>
+#include <cstdio>
+#include <cstdlib>
 #include <chrono>
-
-// how many decimal digits the algorithm generates per iteration:
-#define DIGITS_PER_ITERATION log10(151931373056000) // https://mathoverflow.net/questions/261162/chudnovsky-algorithm-and-pi-precision
-
-void chudnovsky(mpf_t sum, unsigned long long digits) {
-
-  double bits_per_digit = log2(10);
-
-  unsigned long k,              // for # of iterations
-                three_k,        // 3k <- for reuse
-                precision_bits, // bits required to meet digit precision
-                iterations;     // number of iterations
-
-  precision_bits = (bits_per_digit * digits) + 1;
-  iterations = (digits/DIGITS_PER_ITERATION) + 1;
-
-  mpf_set_default_prec(precision_bits);
-  
-  // numerator portion
-  mpz_t a, // (6k)! 
-        b, // 13591409 + 545140134k
-
-  // denominator portion
-        c, // (3k)!
-        d, // (k!)^3
-        e; // (-640320)^(3k)
-
-  mpf_t numerator, denominator, division_result, constant;
-  mp_exp_t exp; // holds the exponent for the result string
-
-  mpz_inits(a, b, c, d, e, NULL);
-  mpf_inits(numerator, denominator, division_result, sum, constant, NULL);
-
-  mpf_set_ui(sum, 0UL); // initialize sum to 0
-
-  mpf_sqrt_ui(constant, 10005UL);
-  mpf_mul_ui(constant, constant, 426880UL);
-
-  for (k = 0; k <= iterations; ++k) {
-    three_k = 3 * k;
-    
-    mpz_fac_ui(a, 6 * k); // a = (6k)!
-
-    mpz_set_ui(b, 545140134UL);
-    mpz_mul_ui(b, b, k); // b = 545140134k
-    mpz_add_ui(b, b, 13591409UL); // b = 13591409 + 545140134k
-
-    mpz_fac_ui(c, three_k); // c = (3k)!
-
-    mpz_fac_ui(d, k); // d = k!
-    mpz_pow_ui(d, d, 3); // d = (k!)^3
-
-    mpz_ui_pow_ui(e, 640320UL, three_k); // 640320^(3k)
-    if (three_k & 1 == 1) { // odd power means negative value
-      mpz_neg(e, e);
-    }
-
-    mpz_mul(a, a, b);
-    mpf_set_z(numerator, a); // numerator = (6k!) * (13591409 + 545140134k)
-
-    mpz_mul(c, c, d); // c = (3k)! * (k!)^3
-    mpz_mul(c, c, e); // c = (3k)! * (k!)^3 * (-640320)^(3k)
-    mpf_set_z(denominator, c); // denominator = (3k)! * (k!)^3 * (-640320)^(3k)
-
-    mpf_div(division_result, numerator, denominator); // numerator/denominator
-    mpf_add(sum, sum, division_result); // adds to sum
-  }
-
-  mpf_ui_div(sum, 1, sum); // invert fraction
-  mpf_mul(sum, sum, constant); // multiply by constant sqrt part
-
-  // output = mpf_get_str(NULL, &exp, 10, digits, sum);
-
-  // clean up
-  mpf_clears(numerator, denominator, division_result, constant, NULL);
-  mpz_clears(a, b, c, d, e, NULL);
+#include <iostream>
+#include <cstdio>
+#include <mpi.h>
+#include <gmp.h>
+extern "C" { 
+  #include "gmp_extended.h"
+  #include "chudnovsky.h"
 }
 
-int main() {
-  unsigned long digits;
-  printf("num of digits: ");
-  scanf("%lu", &digits);
-  printf("\n");
-  FILE* file;
-  mpf_t sum, shift;
-  mpz_t c;
+int main(int argc, char** argv) {
   auto s = std::chrono::steady_clock::now();
-  chudnovsky(sum, digits);
-  auto e = std::chrono::steady_clock::now();
-  double elapsed_time = std::chrono::duration_cast<std::chrono::duration<double>>(e - s).count();
-  printf("\tCalculating %lu digits of pi took %.2f seconds\n\n", digits, elapsed_time);
 
-  s = std::chrono::steady_clock::now();
-  mpz_init(c);
-  mpf_init(shift);
-  mpf_set_ui(shift, 10);
-  mpf_pow_ui(shift, shift, digits);
-  mpf_mul(sum, sum, shift);
-  mpz_set_f(c, sum);
-  e = std::chrono::steady_clock::now();
-  elapsed_time = std::chrono::duration_cast<std::chrono::duration<double>>(e - s).count();
-  printf("\tInteger conversion took %.2f seconds\n\n", elapsed_time);
-  
+  int n_processes, rank;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &n_processes);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  double bytes_used = 
-    mpz_sizeinbase(c, 2)/8.0  // get bits that c uses up and divides by 8 to get bytes
-    + 4;                    // 4 bytes are used to represent the size of mpz_t
-  printf("\t%.2f bytes written in \"pi.bin\"\n\n", bytes_used);
+  unsigned long digits = atoi(argv[1]);
+  mpf_t sum;
+  // std::cout << "hello from process " << rank << "/" << n_processes << std::endl;
+  chudnovsky(sum, digits, rank, n_processes);
+  if (rank != 0) {
+    std::string file_name = ".bin";
+    FILE* file;
+    file_name = std::to_string(rank) + file_name;
+    file = fopen(file_name.c_str(), "w");
+    mpf_out_raw(file, sum);
+    mpf_clear(sum);
+  }
+  // std::cout << "DONE from process " << rank << "/" << n_processes << std::endl;
+  MPI_Finalize();
 
-  file = fopen("pi.bin", "w");
+  if (rank == 0) {
+    FILE* file;
+    mpf_t pi_sum_slice, constant;
+    std::string file_name;
+    const char* file_name_c;
+    mpf_inits(pi_sum_slice, constant, NULL);
+    
+    mpf_sqrt_ui(constant, 10005UL);
+    mpf_mul_ui(constant, constant, 426880UL);
+    
+    for (int i = 1; i < n_processes; ++i) {
+      file_name = std::to_string(i) + ".bin";
+      file_name_c = file_name.c_str();
+      file = fopen(file_name_c, "r");
+      mpf_inp_raw(file, pi_sum_slice);
+      fclose(file);
+      file = NULL;
+      remove(file_name_c);
+      mpf_add(sum, sum, pi_sum_slice);
+    }
 
-  s = std::chrono::steady_clock::now();
-  mpz_out_raw(file, c);
-  fclose(file);
-  e = std::chrono::steady_clock::now();
-  elapsed_time = std::chrono::duration_cast<std::chrono::duration<double>>(e - s).count();
-  printf("\tWriting binary file took %.2f seconds\n\n", elapsed_time);
+    mpf_ui_div(sum, 1, sum); // invert fraction
+    mpf_mul(sum, sum, constant); // multiply by constant sqrt part
+
+    file = fopen("pi.bin", "w");
+    mpf_out_raw(file, sum);
+    // std::string output = "%" + std::to_string(digits) + ".Ff\n\n";
+    // gmp_printf(output.c_str(), sum);
+    fclose(file);
+
+    auto e = std::chrono::steady_clock::now();
+    std::cout << "Wrote " << mpf_size(sum)*8 << " bytes into \"pi.bin\"" << std::endl;
+    std::cout << "With " << n_processes << " processes, " << "calculating pi to " << digits << " digits took " << std::chrono::duration_cast<std::chrono::duration<double>>(e - s).count() << " seconds" << std::endl;
+
+    mpf_clears(pi_sum_slice, constant, sum, NULL);
+  }
 
   return 0;
 }
