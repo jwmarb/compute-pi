@@ -28,6 +28,9 @@ int main(int argc, char** argv) {
   auto hours = std::chrono::duration_cast<std::chrono::hours>(e).count();
   long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
   long ms = std::chrono::duration_cast<std::chrono::milliseconds>(e).count();
-  fmt::print("Took {}h {}m {}s to calculate {} digits of pi\n", hours, mins, (ms%6000)/1000.0, digits);
+  int n_threads = 0;
+  #pragma omp parallel reduction(+:n_threads)
+  n_threads += 1;
+  fmt::print("With {} thread{}, it took {}h {}m {}s to calculate {} digits of pi\n", n_threads, n_threads != 1 ? "s" : "",hours, mins, (ms%6000)/1000.0, digits);
   return 0;
 }
