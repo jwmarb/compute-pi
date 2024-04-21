@@ -36,4 +36,4 @@ cd $EXT
 mkdir fmt
 wget https://github.com/fmtlib/fmt/releases/download/$FMT_VERSION/fmt-$FMT_VERSION.zip
 unzip fmt-$FMT_VERSION.zip -d fmt
-rm fmt-$FMT_VERSION
+rm fmt-$FMT_VERSION.zip
