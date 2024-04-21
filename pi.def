@@ -61,8 +61,31 @@ From: ubuntu:22.04
   export CMAKE_C_COMPILER=/usr/bin/gcc
   export CMAKE_CXX_COMPILER=/usr/bin/g++
   export PMIX_MCA_pcompress_base_silence_warning=1
+  export OMP_NUM_THREADS=4
 
 %runscript
+  OMP_NUM_THREADS=$(nproc)  # default number of threads
+  PI_DIGITS=1000            # default value to calculate pi digits
+
+  for i in "$@"; do
+    case $i in
+      -t|--threads)
+        OMP_NUM_THREADS="$2"
+        shift
+        shift
+        ;;
+      -d|--digits)
+        PI_DIGITS="$2"
+        shift
+        shift
+        ;;
+      -*|--*)
+        echo "unknown argument $1"
+        exit 1
+        ;;
+    esac
+  done
+
   make
   make build
-  make run
+  make run PI_DIGITS=$PI_DIGITS
