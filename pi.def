@@ -21,7 +21,8 @@ From: ubuntu:22.04
   wget https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.gz
   tar -xzf ./gmp-$GMP_VERSION.tar.gz
   rm gmp-$GMP_VERSION.tar.gz
-  cd gmp-$GMP_VERSION
+  mv gmp-$GMP_VERSION gmp
+  cd gmp
   ./configure --enable-fat
   make -j$(nproc)
   
@@ -43,12 +44,23 @@ From: ubuntu:22.04
   cd ..
   rm -rf openmpi-$MPI_VERSION # remove source
 
+  # Install FMT
+  FMT_VERSION=10.2.1
+  cd /usr/local
+  wget https://github.com/fmtlib/fmt/releases/download/$FMT_VERSION/fmt-$FMT_VERSION.zip
+  unzip fmt-$FMT_VERSION.zip
+  rm fmt-$FMT_VERSION.zip
+  mv fmt-$FMT_VERSION fmt
+  cd fmt
+  cmake -DBUILD_SHARED_LIBS=TRUE -S . -B out/build
+  cd out/build
+  make -j$(nproc)
+
 %environment
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
   export CMAKE_C_COMPILER=/usr/local/openmpi/bin/mpicc
   export CMAKE_CXX_COMPILER=/usr/local/openmpi/mpic++
-  export VCPKG_ROOT=/usr/local/vcpkg
-  export PATH=$VCPKG_ROOT:$PATH
+  export PMIX_MCA_pcompress_base_silence_warning=1
 
 %runscript
   make
