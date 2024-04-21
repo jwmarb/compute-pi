@@ -1,3 +1,6 @@
+// Compute n digits of pi
+// This is NOT optimized to be fast running
+
 #include <cstdio>
 #include <cstdlib>
 #include <chrono>
@@ -30,7 +33,6 @@ int main(int argc, char** argv) {
     mpf_out_raw(file, sum);
     mpf_clear(sum);
   }
-  // std::cout << "DONE from process " << rank << "/" << n_processes << std::endl;
   MPI_Finalize();
 
   if (rank == 0) {
