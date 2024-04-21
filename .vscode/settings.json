@@ -87,7 +87,14 @@
     "cinttypes": "cpp",
     "gmp.h": "c",
     "stdio.h": "c",
-    "set": "cpp"
+    "set": "cpp",
+    "any": "cpp",
+    "complex": "cpp",
+    "map": "cpp",
+    "ranges": "cpp",
+    "typeindex": "cpp",
+    "chudnovsky.h": "c",
+    "math.h": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

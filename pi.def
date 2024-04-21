@@ -58,8 +58,8 @@ From: ubuntu:22.04
 
 %environment
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
-  export CMAKE_C_COMPILER=/usr/local/openmpi/bin/mpicc
-  export CMAKE_CXX_COMPILER=/usr/local/openmpi/mpic++
+  export CMAKE_C_COMPILER=/usr/bin/gcc
+  export CMAKE_CXX_COMPILER=/usr/bin/g++
   export PMIX_MCA_pcompress_base_silence_warning=1
 
 %runscript
