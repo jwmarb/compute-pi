@@ -1,7 +1,6 @@
 #include <gmp.h>
 #include <math.h>
 #include <omp.h>
-#include <stdio.h>
 
 // how many decimal digits the algorithm generates per iteration:
 #define DIGITS_PER_ITERATION log10(151931373056000) // https://mathoverflow.net/questions/261162/chudnovsky-algorithm-and-pi-precision
@@ -48,8 +47,6 @@ void chudnovsky(mpf_t sum, unsigned long long digits) {
     mpf_inits(numerator, denominator, division_result, local_sum, NULL);
 
     mpf_set_ui(local_sum, 0UL);
-
-    printf("k=%lu\titer=%lu\titerations=%lu\n", k, iter, iterations);
 
     for (; k < iter; ++k) {
       three_k = 3 * k;
