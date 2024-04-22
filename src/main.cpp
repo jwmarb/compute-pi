@@ -22,8 +22,8 @@ int main(int argc, char** argv) {
   FILE* file = fopen("pi.bin", "w");
   mpf_out_raw(file, sum);
   fclose(file);
-  mpf_clear(sum);
   gmp_printf("π = %.10Ff\n", sum);
+  mpf_clear(sum);
   auto e = std::chrono::steady_clock::now() - s;
   auto hours = std::chrono::duration_cast<std::chrono::hours>(e).count();
   long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
