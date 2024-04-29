@@ -1,36 +1,44 @@
 #include <gmp.h>
 #include <math.h>
 #include <omp.h>
+// #include <stdio.h>
 
 // how many decimal digits the algorithm generates per iteration:
 #define DIGITS_PER_ITERATION log10(151931373056000) // https://mathoverflow.net/questions/261162/chudnovsky-algorithm-and-pi-precision
 
-void chudnovsky(mpf_t sum, unsigned long long digits) {
+void chudnovsky(mpf_t sum, unsigned long long digits, int rank, int n_processes) {
   double bits_per_digit = log2(10);
 
   unsigned long precision_bits, // bits required to meet digit precision
                 iterations;     // number of iterations
 
   precision_bits = (bits_per_digit * digits) + 1;
-  iterations = (digits/DIGITS_PER_ITERATION) + 1;
+  iterations = ((digits/DIGITS_PER_ITERATION) + 1);
 
   mpf_set_default_prec(precision_bits);
 
-  mpf_t constant;
+  // mpf_t constant;
 
-  mpf_inits(constant, sum, NULL);
+  mpf_inits(
+    // constant, 
+    sum, 
+    NULL);
 
-  mpf_sqrt_ui(constant, 10005UL);
-  mpf_mul_ui(constant, constant, 426880UL);
+  // mpf_sqrt_ui(constant, 10005UL);
+  // mpf_mul_ui(constant, constant, 426880UL);
 
   mpf_set_ui(sum, 0UL); // initialize sum to 0
 
   #pragma omp parallel shared(sum,iterations)
   {
-    double tasks = iterations / (double) omp_get_num_threads();
-    unsigned long k = round(tasks * omp_get_thread_num()),
-                  iter = round(tasks * (omp_get_thread_num() + 1)),
+    double tasks = iterations / (double) (n_processes);
+    double subtasks = tasks / (double) (omp_get_num_threads());
+    unsigned long k = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads() + 1))),
+                  iter = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads()))),
                   three_k;        // 3k <- for reuse
+
+    // debugging purposes
+    // printf("%d\tp%d-t%d: %d - %d\n", iterations, rank-1, omp_get_thread_num() , k, iter);
 
     // numerator portion
     mpz_t a, // (6k)! 
@@ -83,6 +91,6 @@ void chudnovsky(mpf_t sum, unsigned long long digits) {
     mpz_clears(a, b, c, d, e, NULL);
   }
 
-  mpf_ui_div(sum, 1, sum); // invert fraction
-  mpf_mul(sum, sum, constant); // multiply by constant sqrt part
+  // mpf_ui_div(sum, 1, sum); // invert fraction
+  // mpf_mul(sum, sum, constant); // multiply by constant sqrt part
 }

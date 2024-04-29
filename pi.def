@@ -58,17 +58,23 @@ From: ubuntu:22.04
 
 %environment
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
-  export CMAKE_C_COMPILER=/usr/bin/gcc
-  export CMAKE_CXX_COMPILER=/usr/bin/g++
+  export CMAKE_C_COMPILER=/usr/local/openmpi/bin/mpicc
+  export CMAKE_CXX_COMPILER=/usr/local/openmpi/bin/mpi++
   export PMIX_MCA_pcompress_base_silence_warning=1
   export OMP_NUM_THREADS=4
 
 %runscript
-  OMP_NUM_THREADS=$(nproc)  # default number of threads
-  PI_DIGITS=1000            # default value to calculate pi digits
+  OMP_NUM_THREADS=$(($(nproc) / 2))  # default number of threads/nodes
+  OMPI_COMM_WORLD_SIZE=2             # default number of CPUs
+  PI_DIGITS=1000                     # default value to calculate pi digits
 
   for i in "$@"; do
     case $i in
+      -p|--processes)
+        OMPI_COMM_WORLD_SIZE="$2"
+        shift
+        shift
+        ;;
       -t|--threads)
         OMP_NUM_THREADS="$2"
         shift
@@ -88,4 +94,4 @@ From: ubuntu:22.04
 
   make
   make build
-  make run PI_DIGITS=$PI_DIGITS
+  make run PI_DIGITS=$PI_DIGITS OMPI_COMM_WORLD_SIZE=$OMPI_COMM_WORLD_SIZE
