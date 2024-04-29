@@ -1,0 +1,75 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+  src /opt
+  CMakeLists.txt /opt
+  Makefile /opt
+
+%post
+
+  apt-get update
+  apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4 python3
+
+  # CMake 3.29.2 installation
+  CMAKE_VERSION=3.29.2
+
+  cd /usr/local
+  wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.sh
+  chmod +x ./cmake-$CMAKE_VERSION-linux-x86_64.sh
+  ./cmake-$CMAKE_VERSION-linux-x86_64.sh --skip-license
+  rm cmake-$CMAKE_VERSION-linux-x86_64.sh
+
+  # Install GMP
+  GMP_VERSION=6.3.0
+  cd /usr/local
+  wget https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.gz
+  tar -xzf ./gmp-$GMP_VERSION.tar.gz
+  rm gmp-$GMP_VERSION.tar.gz
+  mv gmp-$GMP_VERSION gmp
+  cd gmp
+  ./configure --enable-fat
+  make -j$(nproc)
+  
+  # GMP Optimizations
+  # cd tune
+  # make -j$(nproc) tuneup
+  # ./tuneup
+
+  # Install MPI
+  MPI_VERSION=5.0.3
+  cd /usr/local
+  wget https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$MPI_VERSION.tar.bz2
+  tar -jxpf openmpi-$MPI_VERSION.tar.bz2
+  rm openmpi-$MPI_VERSION.tar.bz2 # remove compressed file
+  cd openmpi-$MPI_VERSION
+  ./configure --prefix=/usr/local/openmpi
+  make -j$(nproc) all
+  make install
+  cd ..
+  rm -rf openmpi-$MPI_VERSION # remove source
+
+  # Install FMT
+  FMT_VERSION=10.2.1
+  cd /usr/local
+  wget https://github.com/fmtlib/fmt/releases/download/$FMT_VERSION/fmt-$FMT_VERSION.zip
+  unzip fmt-$FMT_VERSION.zip
+  rm fmt-$FMT_VERSION.zip
+  mv fmt-$FMT_VERSION fmt
+  cd fmt
+  cmake -DBUILD_SHARED_LIBS=TRUE -S . -B out/build
+  cd out/build
+  make -j$(nproc)
+
+  # Compile the MPI application
+  cd /opt && make && make build
+
+%environment
+  export CMAKE_MAKE_PROGRAM=/usr/bin/make
+  export CMAKE_C_COMPILER=/usr/local/openmpi/bin/mpicc
+  export CMAKE_CXX_COMPILER=/usr/local/openmpi/bin/mpi++
+  export PMIX_MCA_pcompress_base_silence_warning=1
+  export OMPI_DIR=/usr/local/openmpi
+  export SINGULARITY_OMPI_DIR=$OMPI_DIR
+  export SINGULARITYENV_APPEND_PATH=$OMPI_DIR/bin
+  export SINGULARITYENV_APPEND_LD_LIBRARY_PATH=$OMPI_DIR/lib
