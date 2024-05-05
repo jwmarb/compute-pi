@@ -32,9 +32,9 @@ From: ubuntu:22.04
   # ./tuneup
 
   # Install MPI
-  MPI_VERSION=5.0.3
+  MPI_VERSION=3.0.6
   cd /usr/local
-  wget https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$MPI_VERSION.tar.bz2
+  wget https://download.open-mpi.org/release/open-mpi/v3.0/openmpi-$MPI_VERSION.tar.bz2
   tar -jxpf openmpi-$MPI_VERSION.tar.bz2
   rm openmpi-$MPI_VERSION.tar.bz2 # remove compressed file
   cd openmpi-$MPI_VERSION
