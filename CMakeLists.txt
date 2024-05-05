@@ -5,13 +5,13 @@ set(CMAKE_CXX_FLAGS ${C_FLAGS})
 set(CMAKE_C_FLAGS ${C_FLAGS})
 
 set(GMP_INC_PATH /usr/local/gmp/)
-set(GMP_LIB_PATH /usr/local/gmp/.libs/libgmp.so)
+set(GMP_LIB_PATH /usr/local/gmp/.libs/libgmp.a)
 
 set(MPI_INC_PATH /usr/local/openmpi/include/)
 set(MPI_LIB_PATH /usr/local/openmpi/lib/libmpi.so)
 
 set(FMT_INC_PATH /usr/local/fmt/include)
-set(FMT_LIB_PATH /usr/local/fmt/out/build/libfmt.so)
+set(FMT_LIB_PATH /usr/local/fmt/out/build/libfmt.a)
 
 project(pi_calculator)
 

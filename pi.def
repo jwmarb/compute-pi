@@ -52,7 +52,7 @@ From: ubuntu:22.04
   rm fmt-$FMT_VERSION.zip
   mv fmt-$FMT_VERSION fmt
   cd fmt
-  cmake -DBUILD_SHARED_LIBS=TRUE -S . -B out/build
+  cmake -S . -B out/build
   cd out/build
   make -j$(nproc)
 
