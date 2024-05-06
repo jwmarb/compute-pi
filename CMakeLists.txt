@@ -23,4 +23,6 @@ add_executable(${PROJECT_NAME}
   src/chudnovsky_bs.c
   )
 
+# add_executable(${PROJECT_NAME} src/mpitest.c)
+
 target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${MPI_LIB_PATH} ${FMT_LIB_PATH})
