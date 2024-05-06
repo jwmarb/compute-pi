@@ -73,6 +73,40 @@ bs* bs_util(unsigned long a, unsigned long b, mpz_t C3_OVER_24) {
   return result;
 }
 
+bs* combine(unsigned long a, unsigned long b, bs** arr) {
+  if (b - a == 1) {
+    return arr[a];
+  } else {
+    bs* result = (bs*) malloc(sizeof(bs));
+    mpz_t c;
+    mpz_inits(result->Pab, result->Qab, result->Tab, c, NULL);
+    unsigned long m = (a + b)/2;
+    bs* r = combine(a, m, arr);
+    bs* l = combine(m, b, arr);
+
+    mpz_mul(result->Pab, l->Pab, r->Pab);
+    mpz_mul(result->Qab, l->Qab, r->Qab);
+
+    mpz_mul(c, l->Pab, r->Tab);
+    mpz_mul(result->Tab, r->Qab, l->Tab);
+    mpz_add(result->Tab, result->Tab, c);
+
+    mpz_clears(
+      c, 
+      l->Pab, 
+      l->Qab, 
+      l->Tab,
+      r->Pab,
+      r->Qab,
+      r->Tab, 
+      NULL
+    );
+    free(l);
+    free(r);
+    return result;
+  }
+}
+
 bs* chudnovsky(unsigned long long digits, int rank, int n_processes) {
   double bits_per_digit = log2(10);
 
@@ -84,8 +118,6 @@ bs* chudnovsky(unsigned long long digits, int rank, int n_processes) {
 
   mpf_set_default_prec(precision_bits);
 
-  // mpf_t constant;
-
   mpz_t C3_OVER_24;
 
   mpz_inits(C3_OVER_24, NULL);
@@ -94,38 +126,41 @@ bs* chudnovsky(unsigned long long digits, int rank, int n_processes) {
   mpz_pow_ui(C3_OVER_24, C3_OVER_24, 3);
   mpz_div_ui(C3_OVER_24, C3_OVER_24, 24);
 
-  // mpf_inits(
-  //   // constant, 
-  //   sum, 
-  //   NULL);
+  bs** arr = NULL;
+  int n_threads = 0;
+  #pragma omp parallel reduction(+:n_threads)
+  n_threads += 1;
+  arr = (bs**) calloc(n_threads, sizeof(bs*));
+  for (int i = 0; i < n_threads; ++i) {
+    arr[i] = (bs*) malloc(sizeof(bs));
+    mpz_inits(arr[i]->Pab, arr[i]->Qab, arr[i]->Tab, NULL);
+    mpz_set_ui(arr[i]->Pab, 0);
+    mpz_set_ui(arr[i]->Qab, 0);
+    mpz_set_ui(arr[i]->Tab, 0);
+  }
 
-  // mpf_sqrt_ui(constant, 10005UL);
-  // mpf_mul_ui(constant, constant, 426880UL);
-
-  // mpz_set_ui(sum, 0ul); // initialize sum to 0
-  bs* r = (bs*) malloc(sizeof(bs));
-  mpz_inits(r->Pab, r->Qab, r->Tab, NULL);
-  mpz_set_ui(r->Pab, 0);
-  mpz_set_ui(r->Qab, 0);
-  mpz_set_ui(r->Tab, 0);
-  #pragma omp parallel shared(iterations, n_processes,r)
+  #pragma omp parallel shared(iterations, n_processes)
   {
     double tasks = iterations / (double) (n_processes);
     double subtasks = tasks / (double) (omp_get_num_threads());
     unsigned long k = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads() + 1))),
                   iter = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads())));
-  printf("total=%lu\tk=%lu\titer=%lu\tn_processes=%d\n", iterations, k, iter, n_processes);
+    printf("t#=%d, total=%lu\tk=%lu\titer=%lu\tn_processes=%d\n", omp_get_thread_num(), iterations, k, iter, n_processes);
 
     bs* subr = bs_util(k, iter, C3_OVER_24);
-    mpz_add(r->Pab, r->Pab, subr->Pab);
-    mpz_add(r->Qab, r->Qab, subr->Qab);
-    mpz_add(r->Tab, r->Tab, subr->Tab);
+    bs* r = arr[omp_get_thread_num()];
+    mpz_set(r->Pab, subr->Pab);
+    mpz_set(r->Qab, subr->Qab);
+    mpz_set(r->Tab, subr->Tab);
     mpz_clears(subr->Pab, subr->Qab, subr->Tab, NULL);
     free(subr);
   }
 
-  return r;
+  bs* result = combine(0, n_threads, arr);
 
-  // mpf_ui_div(sum, 1, sum); // invert fraction
-  // mpf_mul(sum, sum, constant); // multiply by constant sqrt part
+  // manually free the pointer
+  // we do not need to free each individual element since it has been freed inside of combine method
+  free(arr);
+
+  return result;
 }

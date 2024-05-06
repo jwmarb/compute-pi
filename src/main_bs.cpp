@@ -1,5 +1,5 @@
 // Compute n digits of pi
-// This is NOT optimized to be fast running
+// Optimized for high performance computing
 
 #include <omp.h>
 #include <mpi.h>
@@ -11,7 +11,61 @@
 #include <cstdlib>
 extern "C" {
   #include "gmp_extended.h"
-  #include "chudnovsky.h"
+  #include "chudnovsky_bs.h"
+}
+
+bs* combine(int a, int b) {
+  bs* result = (bs*) malloc(sizeof(bs));
+  mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
+  if (b - a == 1) {
+    const char* file_name;
+    file_name = fmt::format("PAB{}.bin", a).c_str();
+    FILE* pab_file = fopen(file_name, "r");
+    mpz_inp_raw(result->Pab, pab_file);
+    fclose(pab_file);
+    remove(file_name);
+    
+    file_name = fmt::format("QAB{}.bin", a).c_str();
+    FILE* qab_file = fopen(file_name, "r");
+    mpz_inp_raw(result->Qab, qab_file);
+    fclose(qab_file);
+    remove(file_name);
+    
+    file_name = fmt::format("TAB{}.bin", a).c_str();
+    FILE* tab_file = fopen(file_name, "r");
+    mpz_inp_raw(result->Tab, tab_file);
+    fclose(tab_file);
+    remove(file_name);
+
+    return result;
+  } else {
+    mpz_t c;
+    mpz_init(c);
+    int m = (a + b)/2;
+    bs* l = combine(a, m);
+    bs* r = combine(m, b);
+
+    mpz_mul(result->Pab, l->Pab, r->Pab);
+    mpz_mul(result->Qab, l->Qab, r->Qab);
+
+    mpz_mul(c, l->Pab, r->Tab);
+    mpz_mul(result->Tab, r->Qab, l->Tab);
+    mpz_add(result->Tab, result->Tab, c);
+
+    mpz_clears(
+      c, 
+      l->Pab, 
+      l->Qab, 
+      l->Tab,
+      r->Pab,
+      r->Qab,
+      r->Tab, 
+      NULL
+    );
+    free(l);
+    free(r);
+    return result;
+  }
 }
 
 int main(int argc, char** argv) {
@@ -39,36 +93,35 @@ int main(int argc, char** argv) {
   
   mpz_t sum;
   mp_exp_t exp;
-  unsigned long digits = atoi(argv[1]);
+  unsigned long digits = atoi(argv[1]) * 2;
   bs* r = chudnovsky(digits, rank+1, n_processes);
   
   // gmp_printf("π = %.100Ff\n", pi);
   // MPI_Finalize();
   // return 0;
 
-  FILE* file;
+  const char* file_name;
+
+  file_name = fmt::format("PAB{}.bin", rank).c_str();
+  FILE* pab_file = fopen(file_name, "w");
+  mpz_out_raw(pab_file, r->Pab);
+  fclose(pab_file);
+
+  file_name = fmt::format("QAB{}.bin", rank).c_str();
+  FILE* qab_file = fopen(file_name, "w");
+  mpz_out_raw(qab_file, r->Qab);
+  fclose(qab_file);
   
-  if (rank != 0) {
-    file = fopen(fmt::format("{}-pi.bin", rank).c_str(), "w");
-    mpz_out_raw(file, r->Qab);
-    fclose(file);
-    mpz_clears(r->Pab, r->Qab, r->Tab, NULL);
-    free(r);
-  }
+  file_name = fmt::format("TAB{}.bin", rank).c_str();
+  FILE* tab_file = fopen(file_name, "w");
+  mpz_out_raw(tab_file, r->Tab);
+  fclose(tab_file);
+  
+  mpz_clears(r->Pab, r->Qab, r->Tab, NULL);
+  free(r);
   MPI_Finalize();
   if (rank == 0) {
-
-    for (int i = 1; i < n_processes; ++i) {
-      const char* file_name = fmt::format("{}-pi.bin", i).c_str();
-      mpz_t pi_file;
-      mpz_init(pi_file);
-      file = fopen(file_name, "r");
-      mpz_inp_raw(pi_file, file);
-      mpz_add(r->Qab, r->Qab, pi_file);
-      fclose(file);
-      remove(file_name);
-      mpz_clear(pi_file); 
-    }
+    bs* r = combine(0, n_processes);
     mpz_t sqrtC, one;
     mpf_t pi, one_f;
     mpz_inits(sqrtC, one, NULL);
@@ -87,19 +140,17 @@ int main(int argc, char** argv) {
     mpf_set_z(pi, r->Qab);
     mpf_div(pi, pi, one_f);
 
-  //   mpf_ui_div(sum, 1, sum); // invert fraction
-    // mpf_mul(sum, sum, constant); // multiply by constant sqrt part
-    gmp_printf("π = %Zd\n", r->Qab);
-  //   file = fopen("pi.bin", "w");
-  //   mpf_out_raw(file, sum);
-  //   auto e = std::chrono::steady_clock::now() - s;
-  //   auto hours = std::chrono::duration_cast<std::chrono::hours>(e).count();
-  //   long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
-  //   long ms = std::chrono::duration_cast<std::chrono::milliseconds>(e).count();
-  //   int n_threads = 0;
-  //   #pragma omp parallel reduction(+:n_threads)
-  //   n_threads += 1;
-  //   fmt::print("With {} processor{} with {} thread{} per processor ({} in total), it took {}h {}m {}s to calculate {} digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits);
+    gmp_printf("π = %.100Ff\n", pi);
+    FILE* file = fopen("pi.bin", "w");
+    mpf_out_raw(file, pi);
+    auto e = std::chrono::steady_clock::now() - s;
+    auto hours = std::chrono::duration_cast<std::chrono::hours>(e).count();
+    long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
+    long ms = std::chrono::duration_cast<std::chrono::milliseconds>(e).count();
+    int n_threads = 0;
+    #pragma omp parallel reduction(+:n_threads)
+    n_threads += 1;
+    fmt::print("With {} processor{} with {} thread{} per processor ({} in total), it took {}h {}m {}s to calculate {} digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits/2);
   }
 
   return 0;

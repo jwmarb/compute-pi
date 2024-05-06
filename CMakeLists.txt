@@ -18,9 +18,9 @@ project(pi_calculator)
 include_directories(${PROJECT_NAME} ${GMP_INC_PATH} ${MPI_INC_PATH} ${FMT_INC_PATH})
 
 add_executable(${PROJECT_NAME} 
-  src/main.cpp
+  src/main_bs.cpp
   src/gmp_extended.c
-  src/chudnovsky.c
+  src/chudnovsky_bs.c
   )
 
 target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${MPI_LIB_PATH} ${FMT_LIB_PATH})
