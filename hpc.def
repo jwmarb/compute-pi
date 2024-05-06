@@ -37,7 +37,7 @@ From: ubuntu:22.04
   # ./tuneup
 
   # Install MPI
-  MPI_VERSION=3.0.6
+  MPI_VERSION=3.1.4
   cd /usr/local
   wget https://download.open-mpi.org/release/open-mpi/v3.0/openmpi-$MPI_VERSION.tar.bz2
   tar -jxpf openmpi-$MPI_VERSION.tar.bz2
