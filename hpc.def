@@ -52,7 +52,7 @@ From: ubuntu:22.04
   rm -rf openmpi-$MPI_VERSION # remove source
 
   cd /opt
-  cmake -DCMAKE_BUILD_TYPE=Release -S . -B out/build
+  cmake -DCMAKE_BUILD_TYPE=Release -S . -B out/build -D CMAKE_CXX_COMPILER=/opt/ext/openmpi/bin/mpic++ -D CMAKE_C_COMPILER=/opt/ext/openmpi/bin/mpicc
   cd out/build
   make
 
