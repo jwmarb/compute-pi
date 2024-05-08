@@ -44,18 +44,6 @@ From: ubuntu:22.04
   cd ..
   rm -rf openmpi-$MPI_VERSION # remove source
 
-  # Install FMT
-  FMT_VERSION=10.2.1
-  cd /usr/local
-  wget https://github.com/fmtlib/fmt/releases/download/$FMT_VERSION/fmt-$FMT_VERSION.zip
-  unzip fmt-$FMT_VERSION.zip
-  rm fmt-$FMT_VERSION.zip
-  mv fmt-$FMT_VERSION fmt
-  cd fmt
-  cmake -S . -B out/build
-  cd out/build
-  make -j$(nproc)
-
 %environment
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
   export CMAKE_C_COMPILER=/usr/local/openmpi/bin/mpicc
