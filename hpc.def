@@ -1,15 +1,17 @@
 Bootstrap: docker
 From: ubuntu:22.04
 
+
+
 %files
   src /opt
   CMakeLists.txt /opt
-  Makefile /opt
 
 %post
-
   apt-get update
   apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4 python3
+
+  mkdir -p /opt/ext
 
   # CMake 3.29.2 installation
   CMAKE_VERSION=3.29.2
@@ -22,15 +24,15 @@ From: ubuntu:22.04
 
   # Install GMP
   GMP_VERSION=6.3.0
-  cd /usr/local
+  cd /opt/ext
   wget https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.gz
   tar -xzf ./gmp-$GMP_VERSION.tar.gz
   rm gmp-$GMP_VERSION.tar.gz
   mv gmp-$GMP_VERSION gmp
   cd gmp
-  ./configure --enable-fat
+  ./configure
   make -j$(nproc)
-  
+
   # GMP Optimizations
   # cd tune
   # make -j$(nproc) tuneup
@@ -38,12 +40,12 @@ From: ubuntu:22.04
 
   # Install MPI
   MPI_VERSION=3.1.4
-  cd /usr/local
+  cd /opt/ext
   wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-$MPI_VERSION.tar.bz2
   tar -jxpf openmpi-$MPI_VERSION.tar.bz2
   rm openmpi-$MPI_VERSION.tar.bz2 # remove compressed file
   cd openmpi-$MPI_VERSION
-  ./configure --prefix=/usr/local/openmpi
+  ./configure --prefix=/opt/ext/openmpi
   make -j$(nproc) all
   make install
   cd ..
@@ -51,25 +53,25 @@ From: ubuntu:22.04
 
   # Install FMT
   FMT_VERSION=10.2.1
-  cd /usr/local
+  cd /opt/ext
   wget https://github.com/fmtlib/fmt/releases/download/$FMT_VERSION/fmt-$FMT_VERSION.zip
   unzip fmt-$FMT_VERSION.zip
   rm fmt-$FMT_VERSION.zip
   mv fmt-$FMT_VERSION fmt
   cd fmt
-  cmake -S . -B out/build
+  cmake -DBUILD_SHARED_LIBS=TRUE -S . -B out/build
   cd out/build
   make -j$(nproc)
 
-  # Compile the MPI application
-  cd /opt && make && make build
+  cd /opt
+  cmake -DCMAKE_BUILD_TYPE=Release -S . -B out/build
+  cd out/build
+  make
 
 %environment
-  export CMAKE_MAKE_PROGRAM=/usr/bin/make
-  export CMAKE_C_COMPILER=/usr/local/openmpi/bin/mpicc
-  export CMAKE_CXX_COMPILER=/usr/local/openmpi/bin/mpi++
   export PMIX_MCA_pcompress_base_silence_warning=1
-  export OMPI_DIR=/usr/local/openmpi
-  export SINGULARITY_OMPI_DIR=$OMPI_DIR
-  export SINGULARITYENV_APPEND_PATH=$OMPI_DIR/bin
-  export SINGULARITYENV_APPEND_LD_LIBRARY_PATH=$OMPI_DIR/lib
+  export CMAKE_C_COMPILER=/opt/ext/openmpi/bin/mpicc
+  export CMAKE_CXX_COMPILER=/opt/ext/openmpi/bin/mpi++
+  export CMAKE_MAKE_PROGRAM=/usr/bin/make
+  export LD_LIBRARY_PATH=/opt/ext/gmp/.libs:/opt/ext/fmt/out/build:/opt/ext/openmpi/lib
+  export OMP_NUM_THREADS=1

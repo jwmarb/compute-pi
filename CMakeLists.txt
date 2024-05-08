@@ -1,17 +1,17 @@
-cmake_minimum_required(VERSION 3.29.0)
+cmake_minimum_required(VERSION 3.28.3)
 
 set(C_FLAGS "-O3 -fopenmp")
 set(CMAKE_CXX_FLAGS ${C_FLAGS})
 set(CMAKE_C_FLAGS ${C_FLAGS})
 
-set(GMP_INC_PATH /usr/local/gmp/)
-set(GMP_LIB_PATH /usr/local/gmp/.libs/libgmp.a)
+set(GMP_INC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/gmp/)
+set(GMP_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/gmp/.libs/libgmp.so)
 
-set(MPI_INC_PATH /usr/local/openmpi/include/)
-set(MPI_LIB_PATH /usr/local/openmpi/lib/libmpi.so)
+set(MPI_INC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/openmpi/include/)
+set(MPI_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/openmpi/lib/libmpi.so)
 
-set(FMT_INC_PATH /usr/local/fmt/include)
-set(FMT_LIB_PATH /usr/local/fmt/out/build/libfmt.a)
+set(FMT_INC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/fmt/include)
+set(FMT_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/fmt/out/build/libfmt.so)
 
 project(pi_calculator)
 
