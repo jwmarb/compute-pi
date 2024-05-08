@@ -3,12 +3,11 @@
 
 #include <omp.h>
 #include <mpi.h>
-#include <stdio.h>
+#include <cstdio>
+#include <cstdlib>
 #include <gmp.h>
 #include <iostream>
 #include <chrono>
-#include <fmt/core.h>
-#include <cstdlib>
 extern "C" {
   #include "gmp_extended.h"
   #include "chudnovsky_bs.h"
@@ -19,19 +18,25 @@ bs* combine(int a, int b) {
   mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
     const char* file_name;
-    file_name = fmt::format("/tmp/PAB{}.bin", a).c_str();
+    if (asprintf((char**) &file_name, "/tmp/PAB%d.bin", a) < 0) {
+      printf("Error formatting string \"file_name\"");
+    };
     FILE* pab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Pab, pab_file);
     fclose(pab_file);
     remove(file_name);
     
-    file_name = fmt::format("/tmp/QAB{}.bin", a).c_str();
+    if (asprintf((char**) &file_name, "/tmp/QAB%d.bin", a) < 0) {
+      printf("Error formatting string \"file_name\"");
+    };
     FILE* qab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Qab, qab_file);
     fclose(qab_file);
     remove(file_name);
     
-    file_name = fmt::format("/tmp/TAB{}.bin", a).c_str();
+    if (asprintf((char**) &file_name, "/tmp/TAB%d.bin", a) < 0) {
+      printf("Error formatting string \"file_name\"");
+    };
     FILE* tab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Tab, tab_file);
     fclose(tab_file);
@@ -73,21 +78,21 @@ int main(int argc, char** argv) {
   int rank, n_processes, rc;
   rc = MPI_Init(&argc, &argv);
   if (rc != MPI_SUCCESS) {
-    fmt::print("MPI_Init() failed\n");
+    printf("MPI_Init() failed\n");
     return EXIT_FAILURE;
   }
 
   rc = MPI_Comm_size(MPI_COMM_WORLD, &n_processes);
 
   if (rc != MPI_SUCCESS) {
-    fmt::print("MPI_Comm_size() failed\n");
+    printf("MPI_Comm_size() failed\n");
     return EXIT_FAILURE;
   }
 
   rc = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    
   if (rc != MPI_SUCCESS) {
-    fmt::print("MPI_Comm_rank() failed\n");
+    printf("MPI_Comm_rank() failed\n");
     return EXIT_FAILURE;
   }
   
@@ -101,18 +106,26 @@ int main(int argc, char** argv) {
   // return 0;
 
   const char* file_name;
-
-  file_name = fmt::format("/tmp/PAB{}.bin", rank).c_str();
+  if (asprintf((char**) &file_name, "/tmp/PAB%d.bin", rank) < 0) {
+    printf("Error formatting string \"file_name\"");
+    return 1;
+  };
   FILE* pab_file = fopen(file_name, "w");
   mpz_out_raw(pab_file, r->Pab);
   fclose(pab_file);
 
-  file_name = fmt::format("/tmp/QAB{}.bin", rank).c_str();
+  if (asprintf((char**) &file_name, "/tmp/QAB%d.bin", rank) < 0) {
+    printf("Error formatting string \"file_name\"");
+    return 1;
+  };
   FILE* qab_file = fopen(file_name, "w");
   mpz_out_raw(qab_file, r->Qab);
   fclose(qab_file);
   
-  file_name = fmt::format("/tmp/TAB{}.bin", rank).c_str();
+  if (asprintf((char**) &file_name, "/tmp/TAB%d.bin", rank) < 0) {
+    printf("Error formatting string \"file_name\"");
+    return 1;
+  };
   FILE* tab_file = fopen(file_name, "w");
   mpz_out_raw(tab_file, r->Tab);
   fclose(tab_file);
@@ -150,7 +163,7 @@ int main(int argc, char** argv) {
     int n_threads = 0;
     #pragma omp parallel reduction(+:n_threads)
     n_threads += 1;
-    fmt::print("With {} processor{} with {} thread{} per processor ({} in total), it took {}h {}m {}s to calculate {} digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits/2);
+    printf("With %d processor%s with %d thread%s per processor (%d in total), it took %luh %lum %.2fs to calculate %lu digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits/2);
   }
 
   return 0;
