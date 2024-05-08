@@ -17,30 +17,33 @@ bs* combine(int a, int b) {
   bs* result = (bs*) malloc(sizeof(bs));
   mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
-    const char* file_name;
-    if (asprintf((char**) &file_name, "/tmp/PAB%d.bin", a) < 0) {
+    char* file_name;
+    if (asprintf(&file_name, "PAB%d.bin", a) < 0) {
       printf("Error formatting string \"file_name\"");
     };
     FILE* pab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Pab, pab_file);
     fclose(pab_file);
     remove(file_name);
+    free(file_name);
     
-    if (asprintf((char**) &file_name, "/tmp/QAB%d.bin", a) < 0) {
+    if (asprintf(&file_name, "QAB%d.bin", a) < 0) {
       printf("Error formatting string \"file_name\"");
     };
     FILE* qab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Qab, qab_file);
     fclose(qab_file);
     remove(file_name);
+    free(file_name);
     
-    if (asprintf((char**) &file_name, "/tmp/TAB%d.bin", a) < 0) {
+    if (asprintf(&file_name, "TAB%d.bin", a) < 0) {
       printf("Error formatting string \"file_name\"");
     };
     FILE* tab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Tab, tab_file);
     fclose(tab_file);
     remove(file_name);
+    free(file_name);
 
     return result;
   } else {
@@ -105,30 +108,33 @@ int main(int argc, char** argv) {
   // MPI_Finalize();
   // return 0;
 
-  const char* file_name;
-  if (asprintf((char**) &file_name, "/tmp/PAB%d.bin", rank) < 0) {
+  char* file_name;
+  if (asprintf(&file_name, "PAB%d.bin", rank) < 0) {
     printf("Error formatting string \"file_name\"");
     return 1;
   };
   FILE* pab_file = fopen(file_name, "w");
   mpz_out_raw(pab_file, r->Pab);
   fclose(pab_file);
+  free(file_name);
 
-  if (asprintf((char**) &file_name, "/tmp/QAB%d.bin", rank) < 0) {
+  if (asprintf(&file_name, "QAB%d.bin", rank) < 0) {
     printf("Error formatting string \"file_name\"");
     return 1;
   };
   FILE* qab_file = fopen(file_name, "w");
   mpz_out_raw(qab_file, r->Qab);
   fclose(qab_file);
+  free(file_name);
   
-  if (asprintf((char**) &file_name, "/tmp/TAB%d.bin", rank) < 0) {
+  if (asprintf(&file_name, "TAB%d.bin", rank) < 0) {
     printf("Error formatting string \"file_name\"");
     return 1;
   };
   FILE* tab_file = fopen(file_name, "w");
   mpz_out_raw(tab_file, r->Tab);
   fclose(tab_file);
+  free(file_name);
   
   mpz_clears(r->Pab, r->Qab, r->Tab, NULL);
   free(r);
