@@ -19,19 +19,19 @@ bs* combine(int a, int b) {
   mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
     const char* file_name;
-    file_name = fmt::format("PAB{}.bin", a).c_str();
+    file_name = fmt::format("/tmp/PAB{}.bin", a).c_str();
     FILE* pab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Pab, pab_file);
     fclose(pab_file);
     remove(file_name);
     
-    file_name = fmt::format("QAB{}.bin", a).c_str();
+    file_name = fmt::format("/tmp/QAB{}.bin", a).c_str();
     FILE* qab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Qab, qab_file);
     fclose(qab_file);
     remove(file_name);
     
-    file_name = fmt::format("TAB{}.bin", a).c_str();
+    file_name = fmt::format("/tmp/TAB{}.bin", a).c_str();
     FILE* tab_file = fopen(file_name, "r");
     mpz_inp_raw(result->Tab, tab_file);
     fclose(tab_file);
@@ -102,17 +102,17 @@ int main(int argc, char** argv) {
 
   const char* file_name;
 
-  file_name = fmt::format("PAB{}.bin", rank).c_str();
+  file_name = fmt::format("/tmp/PAB{}.bin", rank).c_str();
   FILE* pab_file = fopen(file_name, "w");
   mpz_out_raw(pab_file, r->Pab);
   fclose(pab_file);
 
-  file_name = fmt::format("QAB{}.bin", rank).c_str();
+  file_name = fmt::format("/tmp/QAB{}.bin", rank).c_str();
   FILE* qab_file = fopen(file_name, "w");
   mpz_out_raw(qab_file, r->Qab);
   fclose(qab_file);
   
-  file_name = fmt::format("TAB{}.bin", rank).c_str();
+  file_name = fmt::format("/tmp/TAB{}.bin", rank).c_str();
   FILE* tab_file = fopen(file_name, "w");
   mpz_out_raw(tab_file, r->Tab);
   fclose(tab_file);
