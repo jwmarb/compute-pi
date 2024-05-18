@@ -4,11 +4,11 @@ set(C_FLAGS "-O3 -fopenmp")
 set(CMAKE_CXX_FLAGS ${C_FLAGS})
 set(CMAKE_C_FLAGS ${C_FLAGS})
 
-set(GMP_INC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/gmp/)
-set(GMP_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/gmp/.libs/libgmp.so)
+set(GMP_INC_PATH /opt/ext/gmp/)
+set(GMP_LIB_PATH /opt/ext/gmp/.libs/libgmp.so)
 
-set(MPI_INC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/openmpi/include/)
-set(MPI_LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/ext/openmpi/lib/libmpi.so)
+set(MPI_INC_PATH /openmpi-3.1.4/ompi/include/)
+set(MPI_LIB_PATH /usr/local/lib/libmpi.so)
 
 project(pi_calculator)
 
