@@ -41,5 +41,4 @@ From: /contrib/singularity/shared/base-images/updatedUbuntu22.04.withOMPI3.sif
   export CMAKE_C_COMPILER=/usr/local/bin/mpicc
   export CMAKE_CXX_COMPILER=/usr/local/bin/mpic++
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
-  export LD_LIBRARY_PATH=/opt/ext/gmp/.libs:/usr/local/lib
   export OMP_NUM_THREADS=1

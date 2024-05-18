@@ -1,16 +1,16 @@
 // Compute n digits of pi
-// This is NOT optimized to be fast running
+// Optimized for high performance computing
 
 #include <omp.h>
 #include <mpi.h>
-#include <stdio.h>
+#include <cstdio>
+#include <cstdlib>
 #include <gmp.h>
 #include <iostream>
 #include <chrono>
-#include <fmt/core.h>
 extern "C" {
-  #include "gmp_extended.h"
   #include "chudnovsky.h"
+  #include "gmp_extended.h"
 }
 
 int main(int argc, char** argv) {
@@ -18,58 +18,65 @@ int main(int argc, char** argv) {
   int rank, n_processes, rc;
   rc = MPI_Init(&argc, &argv);
   if (rc != MPI_SUCCESS) {
-    fmt::print("MPI_Init() failed\n");
+    printf("MPI_Init() failed\n");
     return EXIT_FAILURE;
   }
 
   rc = MPI_Comm_size(MPI_COMM_WORLD, &n_processes);
 
   if (rc != MPI_SUCCESS) {
-    fmt::print("MPI_Comm_size() failed\n");
+    printf("MPI_Comm_size() failed\n");
     return EXIT_FAILURE;
   }
 
   rc = MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    
   if (rc != MPI_SUCCESS) {
-    fmt::print("MPI_Comm_rank() failed\n");
+    printf("MPI_Comm_rank() failed\n");
     return EXIT_FAILURE;
   }
   
-  mpf_t sum;
+  mpz_t sum;
   mp_exp_t exp;
-  unsigned long digits = atoi(argv[1]);
-  chudnovsky(sum, digits, rank+1, n_processes);
-
-  FILE* file;
+  unsigned long digits = atoi(argv[1]) * 2;
+  bs* r = chudnovsky(digits, rank+1, n_processes);
   
-  if (rank != 0) {
-    file = fopen(fmt::format("{}-pi.bin", rank).c_str(), "w");
-    mpf_out_raw(file, sum);
-    fclose(file);
-    mpf_clear(sum);
-  }
+  // gmp_printf("π = %.100Ff\n", pi);
+  // MPI_Finalize();
+  // return 0;
+
+  char* file_name;
+  if (asprintf(&file_name, "PAB%d.bin", rank) < 0) {
+    printf("Error formatting string \"file_name\"");
+    return 1;
+  };
+  FILE* pab_file = fopen(file_name, "w");
+  mpz_out_raw(pab_file, r->Pab);
+  fclose(pab_file);
+  free(file_name);
+
+  if (asprintf(&file_name, "QAB%d.bin", rank) < 0) {
+    printf("Error formatting string \"file_name\"");
+    return 1;
+  };
+  FILE* qab_file = fopen(file_name, "w");
+  mpz_out_raw(qab_file, r->Qab);
+  fclose(qab_file);
+  free(file_name);
+  
+  if (asprintf(&file_name, "TAB%d.bin", rank) < 0) {
+    printf("Error formatting string \"file_name\"");
+    return 1;
+  };
+  FILE* tab_file = fopen(file_name, "w");
+  mpz_out_raw(tab_file, r->Tab);
+  fclose(tab_file);
+  free(file_name);
+  
+  mpz_clears(r->Pab, r->Qab, r->Tab, NULL);
+  free(r);
   MPI_Finalize();
   if (rank == 0) {
-    mpf_t constant;
-    mpf_init(constant);
-    mpf_sqrt_ui(constant, 10005UL);
-    mpf_mul_ui(constant, constant, 426880UL);
-    for (int i = 1; i < n_processes; ++i) {
-      const char* file_name = fmt::format("{}-pi.bin", i).c_str();
-      mpf_t pi_file;
-      mpf_init(pi_file);
-      file = fopen(file_name, "r");
-      mpf_inp_raw(file, pi_file);
-      mpf_add(sum, sum, pi_file);
-      fclose(file);
-      remove(file_name);
-      mpf_clear(pi_file); 
-    }
-
-    mpf_ui_div(sum, 1, sum); // invert fraction
-    mpf_mul(sum, sum, constant); // multiply by constant sqrt part
-    gmp_printf("π = %.32Ff\n", sum);
     auto e = std::chrono::steady_clock::now() - s;
     auto hours = std::chrono::duration_cast<std::chrono::hours>(e).count();
     long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
@@ -77,8 +84,7 @@ int main(int argc, char** argv) {
     int n_threads = 0;
     #pragma omp parallel reduction(+:n_threads)
     n_threads += 1;
-    fmt::print("With {} processor{} with {} thread{} per processor ({} in total), it took {}h {}m {}s to calculate {} digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits);
+    printf("With %d processor%s with %d thread%s per processor (%d in total), it took %luh %lum %.2fs to calculate %lu digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits/2);
   }
-
   return 0;
 }

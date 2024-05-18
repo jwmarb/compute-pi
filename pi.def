@@ -59,19 +59,6 @@ From: ubuntu:22.04
   # make -j$(nproc) tuneup
   # ./tuneup
 
-  # Install MPI
-  MPI_VERSION=3.1.6
-  cd /usr/local
-  wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-$MPI_VERSION.tar.bz2
-  tar -jxpf openmpi-$MPI_VERSION.tar.bz2
-  rm openmpi-$MPI_VERSION.tar.bz2 # remove compressed file
-  cd openmpi-$MPI_VERSION
-  ./configure --prefix=/usr/local/openmpi
-  make -j$(nproc) all
-  make install
-  cd ..
-  rm -rf openmpi-$MPI_VERSION # remove source
-
 %environment
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
   export CMAKE_C_COMPILER=/usr/local/bin/mpicc

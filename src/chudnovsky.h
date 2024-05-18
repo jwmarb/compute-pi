@@ -1,4 +1,11 @@
+#ifndef CHUDNOVSKY_H
 #include <gmp.h>
 #include <math.h>
 
-void chudnovsky(mpf_t, unsigned long long, int, int);
+typedef struct bs {
+  mpz_t Pab, Qab, Tab;
+} bs;
+
+bs* chudnovsky(unsigned long long, int, int);
+void init_precision_bits(unsigned long long);
+#endif
