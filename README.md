@@ -34,8 +34,6 @@ To execute:
 
 #### Run manually
 
-**On a local machine, replace `hpc.sif` with `hpc_local.sif`**
-
 ```sh
 OMP_NUM_THREADS=<cpus-per-tasks>
 NUM_PI_DIGITS=<num_of_pi_digits>
