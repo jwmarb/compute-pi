@@ -1,7 +1,5 @@
-Bootstrap: docker
-From: ubuntu:22.04
-
-
+Bootstrap: localimage
+From: /contrib/singularity/shared/base-images/updatedUbuntu22.04.withOMPI3.sif
 
 %files
   src /opt
@@ -9,7 +7,7 @@ From: ubuntu:22.04
 
 %post
   apt-get update
-  apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4 python3
+  apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4 python3 hwloc libhwloc-dev
 
   mkdir -p /opt/ext
 
@@ -33,33 +31,15 @@ From: ubuntu:22.04
   ./configure
   make -j$(nproc)
 
-  # GMP Optimizations
-  # cd tune
-  # make -j$(nproc) tuneup
-  # ./tuneup
-
-  # Install MPI
-  MPI_VERSION=3.1.4
-  cd /opt/ext
-  wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-$MPI_VERSION.tar.bz2
-  tar -jxpf openmpi-$MPI_VERSION.tar.bz2
-  rm openmpi-$MPI_VERSION.tar.bz2 # remove compressed file
-  cd openmpi-$MPI_VERSION
-  ./configure --prefix=/opt/ext/openmpi
-  make -j$(nproc) all
-  make install
-  cd ..
-  rm -rf openmpi-$MPI_VERSION # remove source
-
   cd /opt
-  cmake -DCMAKE_BUILD_TYPE=Release -S . -B out/build -D CMAKE_CXX_COMPILER=/opt/ext/openmpi/bin/mpic++ -D CMAKE_C_COMPILER=/opt/ext/openmpi/bin/mpicc
+  cmake -DCMAKE_BUILD_TYPE=Release -S . -B out/build -D CMAKE_CXX_COMPILER=/usr/local/bin/mpic++ -D CMAKE_C_COMPILER=/usr/local/bin/mpicc
   cd out/build
   make
 
 %environment
   export PMIX_MCA_pcompress_base_silence_warning=1
-  export CMAKE_C_COMPILER=/opt/ext/openmpi/bin/mpicc
-  export CMAKE_CXX_COMPILER=/opt/ext/openmpi/bin/mpi++
+  export CMAKE_C_COMPILER=/usr/local/bin/mpicc
+  export CMAKE_CXX_COMPILER=/usr/local/bin/mpic++
   export CMAKE_MAKE_PROGRAM=/usr/bin/make
-  export LD_LIBRARY_PATH=/opt/ext/gmp/.libs:/opt/ext/fmt/out/build:/opt/ext/openmpi/lib
+  export LD_LIBRARY_PATH=/opt/ext/gmp/.libs:/usr/local/lib
   export OMP_NUM_THREADS=1
