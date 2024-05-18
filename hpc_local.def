@@ -1,0 +1,78 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+  src /opt
+  CMakeLists.txt /opt
+
+%post
+  apt-get update
+  apt-get -y install build-essential git curl tar zip unzip wget pkg-config m4 python3 hwloc libhwloc-dev
+
+  mkdir -p /opt/ext
+
+  . /environment
+  apt-get update
+  apt-get -y upgrade
+
+  mkdir -p /opt/ext
+
+  apt-get install -y wget git build-essential cmake autoconf libtool libevent-dev flex libibverbs-dev libpsm-infinipath1 libpsm2-2 libpsm2-dev libpsm-infinipath1-dev openssh-client
+  
+  wget https://github.com/openpmix/openpmix/archive/refs/tags/v2.1.0rc2.tar.gz
+  tar xzvf v2.1.0rc2.tar.gz
+  cd openpmix-2.1.0rc2
+  ./autogen.pl
+  ./configure --prefix=/usr/bin/pmix
+  make -j$(nproc)
+  make install
+  cd ..
+
+  wget https://github.com/open-mpi/hwloc/archive/refs/tags/hwloc-1.11.13.tar.gz
+  tar xzvf hwloc-1.11.13.tar.gz
+  cd hwloc-hwloc-1.11.13
+  ./autogen.sh
+  ./configure
+  make -j$(nproc)
+  make install
+  cd ..
+
+  wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.4.tar.gz
+  tar xzvf openmpi-3.1.4.tar.gz
+  cd openmpi-3.1.4
+  ./configure --disable-static --enable-builtin-atomics --with-sge --enable-mpi-cxx --with-pmix=/usr/bin/pmix --with-libevent=external --with-hwloc=external --with-psm --with-psm2 --with-verbs
+  make -j$(nproc)
+  make install
+  ldconfig
+
+  # CMake 3.29.2 installation
+  CMAKE_VERSION=3.29.2
+
+  cd /usr/local
+  wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-x86_64.sh
+  chmod +x ./cmake-$CMAKE_VERSION-linux-x86_64.sh
+  ./cmake-$CMAKE_VERSION-linux-x86_64.sh --skip-license
+  rm cmake-$CMAKE_VERSION-linux-x86_64.sh
+
+  # Install GMP
+  GMP_VERSION=6.3.0
+  cd /opt/ext
+  wget https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.gz
+  tar -xzf ./gmp-$GMP_VERSION.tar.gz
+  rm gmp-$GMP_VERSION.tar.gz
+  mv gmp-$GMP_VERSION gmp
+  cd gmp
+  ./configure
+  make -j$(nproc)
+
+  cd /opt
+  cmake -DCMAKE_BUILD_TYPE=Release -S . -B out/build -D CMAKE_CXX_COMPILER=/usr/local/bin/mpic++ -D CMAKE_C_COMPILER=/usr/local/bin/mpicc
+  cd out/build
+  make
+
+%environment
+  export PMIX_MCA_pcompress_base_silence_warning=1
+  export CMAKE_C_COMPILER=/usr/local/bin/mpicc
+  export CMAKE_CXX_COMPILER=/usr/local/bin/mpic++
+  export CMAKE_MAKE_PROGRAM=/usr/bin/make
+  export OMP_NUM_THREADS=1
