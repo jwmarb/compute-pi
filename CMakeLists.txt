@@ -30,6 +30,12 @@ add_library(
   src/gmp_extended.h
 )
 
+add_library(
+  debug_allocate SHARED
+  src/allocate.c
+  src/allocate.h
+)
+
 include_directories(${GMP_INC_PATH} ${MPI_INC_PATH})
 
 add_executable(${PROJECT_NAME} 
@@ -39,4 +45,4 @@ add_executable(${PROJECT_NAME}
 add_executable(pi_reducer src/reducer.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${MPI_LIB_PATH} chudnovsky gmp_extended)
-target_link_libraries(pi_reducer ${GMP_LIB_PATH} chudnovsky gmp_extended)
+target_link_libraries(pi_reducer ${GMP_LIB_PATH} chudnovsky gmp_extended debug_allocate)

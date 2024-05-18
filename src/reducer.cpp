@@ -5,6 +5,7 @@
 extern "C" {
   #include "gmp_extended.h"
   #include "chudnovsky.h"
+  #include "allocate.h"
 }
 
 bs* combine(int a, int b) {
