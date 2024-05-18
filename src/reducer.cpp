@@ -9,7 +9,7 @@ extern "C" {
 }
 
 bs* combine(int a, int b) {
-  bs* result = (bs*) malloc(sizeof(bs));
+  bs* result = (bs*) d_malloc(sizeof(bs));
   mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
     char* file_name;
@@ -65,13 +65,34 @@ bs* combine(int a, int b) {
       r->Tab, 
       NULL
     );
-    free(l);
-    free(r);
+    d_free(l);
+    d_free(r);
     return result;
   }
 }
 
+/**
+ * For testing memory leaks, use the functions below
+ * Tracking allocations are on a linked list, and if
+ * the list has any allocations, it will be printed.
+ * 
+ * This should not be used in production due to how slow 
+*/
+
+// void* _malloc(size_t size) {
+//   return d_malloc(size);
+// }
+
+// void* _realloc(void* ptr, size_t old_size, size_t new_size) {
+//   return d_realloc(ptr, new_size);
+// }
+
+// void _free(void* ptr, size_t size) {
+//   return d_free(ptr);
+// }
+
 int main(int argc, char** argv) {
+  // mp_set_memory_functions(&_malloc, &_realloc, &_free);
   unsigned long digits = atoi(argv[1]) * 2;
   unsigned long n_processes = atoi(argv[2]);
   init_precision_bits(digits);
@@ -96,6 +117,7 @@ int main(int argc, char** argv) {
   mpf_div(pi, pi, one_f);
 
   gmp_printf("π = %.100Ff\n", pi);
+  d_free(r);
   FILE* file = fopen("pi.bin", "w");
   mpf_out_raw(file, pi);
   auto e = std::chrono::steady_clock::now() - s;
@@ -103,5 +125,6 @@ int main(int argc, char** argv) {
   long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
   long ms = std::chrono::duration_cast<std::chrono::milliseconds>(e).count();
   printf("Took %luh %lum %.2fs to combine all bin files into pi.bin\n", hours, mins, (ms%6000)/1000.0);
+  detect_mem_leak();
   return 0;
 }
