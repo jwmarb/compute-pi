@@ -6,6 +6,8 @@ From: ubuntu:22.04
   apt-get update
   apt-get -y upgrade
 
+  mkdir -p /opt/ext
+
   apt-get install -y wget git build-essential cmake autoconf libtool libevent-dev flex libibverbs-dev libpsm-infinipath1 libpsm2-2 libpsm2-dev libpsm-infinipath1-dev openssh-client
   
   wget https://github.com/openpmix/openpmix/archive/refs/tags/v2.1.0rc2.tar.gz
@@ -45,7 +47,7 @@ From: ubuntu:22.04
 
   # Install GMP
   GMP_VERSION=6.3.0
-  cd /usr/local
+  cd /opt/ext
   wget https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.gz
   tar -xzf ./gmp-$GMP_VERSION.tar.gz
   rm gmp-$GMP_VERSION.tar.gz
