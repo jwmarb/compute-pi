@@ -81,3 +81,13 @@ singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc_local.sif mpirun -n 
 
 singularity exec hpc_local.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES
 ```
+
+#### Development
+
+Intellisense has been configured for VSCode for this project. However, the header files of external libraries are NOT included. To automatically get the header files necessary for intellisense, run the shell script `setup.sh`:
+
+```sh
+chmod +x ./setup.sh && ./setup.sh
+```
+
+Depending on how fast your machine is, this will take a while. This is because the external libraries are also compiled to get their shared/dynamic library files.
