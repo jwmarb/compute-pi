@@ -8,12 +8,12 @@ extern "C" {
   #include "allocate.h"
 }
 
-bs* combine(int a, int b) {
+bs* combine(int a, int b, char* tmp_dir) {
   bs* result = (bs*) malloc(sizeof(bs));
   mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
     char* file_name;
-    if (asprintf(&file_name, "PAB%d.bin", a) < 0) {
+    if (asprintf(&file_name, "%s/PAB%d.bin", tmp_dir, a) < 0) {
       printf("Error formatting string \"file_name\"");
     };
     FILE* pab_file = fopen(file_name, "r");
@@ -22,7 +22,7 @@ bs* combine(int a, int b) {
     remove(file_name);
     free(file_name);
     
-    if (asprintf(&file_name, "QAB%d.bin", a) < 0) {
+    if (asprintf(&file_name, "%s/QAB%d.bin", tmp_dir, a) < 0) {
       printf("Error formatting string \"file_name\"");
     };
     FILE* qab_file = fopen(file_name, "r");
@@ -31,7 +31,7 @@ bs* combine(int a, int b) {
     remove(file_name);
     free(file_name);
     
-    if (asprintf(&file_name, "TAB%d.bin", a) < 0) {
+    if (asprintf(&file_name, "%s/TAB%d.bin", tmp_dir, a) < 0) {
       printf("Error formatting string \"file_name\"");
     };
     FILE* tab_file = fopen(file_name, "r");
@@ -45,8 +45,8 @@ bs* combine(int a, int b) {
     mpz_t c;
     mpz_init(c);
     int m = (a + b)/2;
-    bs* l = combine(a, m);
-    bs* r = combine(m, b);
+    bs* l = combine(a, m, tmp_dir);
+    bs* r = combine(m, b, tmp_dir);
 
     mpz_mul(result->Pab, l->Pab, r->Pab);
     mpz_mul(result->Qab, l->Qab, r->Qab);
@@ -95,9 +95,11 @@ int main(int argc, char** argv) {
   // mp_set_memory_functions(&_malloc, &_realloc, &_free);
   unsigned long digits = atoi(argv[1]) * 2;
   unsigned long n_processes = atoi(argv[2]);
+  char* tmp_dir = argv[3];
+  const char* output_path = argv[4];
   init_precision_bits(digits);
   auto s = std::chrono::steady_clock::now();
-  bs* r = combine(0, n_processes);
+  bs* r = combine(0, n_processes, tmp_dir);
   mpz_t sqrtC, one;
   mpf_t pi, one_f;
   mpz_inits(sqrtC, one, NULL);
@@ -120,7 +122,7 @@ int main(int argc, char** argv) {
   mpz_clears(r->Pab, r->Qab, r->Tab, sqrtC, one, NULL);
   mpf_clears(one_f, NULL);
   free(r);
-  FILE* file = fopen("pi.bin", "w");
+  FILE* file = fopen(output_path, "w");
   mpf_out_raw(file, pi);
   mpf_clear(pi);
   auto e = std::chrono::steady_clock::now() - s;

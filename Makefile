@@ -10,8 +10,9 @@ build:
 	cd out/build && make
 
 run:
-	cd out/build && $(RUN) -n $(OMPI_COMM_WORLD_SIZE) --allow-run-as-root ./pi_calculator $(PI_DIGITS)
-	cd out/build && ./pi_reducer $(PI_DIGITS) $(OMPI_COMM_WORLD_SIZE)
+	cd out/build && $(RUN) -n $(OMPI_COMM_WORLD_SIZE) --allow-run-as-root ./pi_calculator $(PI_DIGITS) /tmp
+	cd out/build && ./pi_reducer $(PI_DIGITS) $(OMPI_COMM_WORLD_SIZE) /tmp ./pi_out.bin
+	rm -rf /tmp/[TQP]AB[0123456789+]*.bin
 
 clean:
 	rm -rf out ext

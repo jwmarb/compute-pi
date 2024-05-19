@@ -61,6 +61,7 @@ int main(int argc, char** argv) {
   mpz_t sum;
   mp_exp_t exp;
   unsigned long digits = strtoull(argv[1], NULL, 10) * 2;
+  char* output_dir = argv[2];
   bs* r = chudnovsky(digits, rank+1, n_processes);
   
   // gmp_printf("π = %.100Ff\n", pi);
@@ -68,7 +69,7 @@ int main(int argc, char** argv) {
   // return 0;
 
   char* file_name;
-  if (asprintf(&file_name, "PAB%d.bin", rank) < 0) {
+  if (asprintf(&file_name, "%s/PAB%d.bin", output_dir, rank) < 0) {
     printf("Error formatting string \"file_name\"");
     return 1;
   };
@@ -77,7 +78,7 @@ int main(int argc, char** argv) {
   fclose(pab_file);
   free(file_name);
 
-  if (asprintf(&file_name, "QAB%d.bin", rank) < 0) {
+  if (asprintf(&file_name, "%s/QAB%d.bin", output_dir, rank) < 0) {
     printf("Error formatting string \"file_name\"");
     return 1;
   };
@@ -86,7 +87,7 @@ int main(int argc, char** argv) {
   fclose(qab_file);
   free(file_name);
   
-  if (asprintf(&file_name, "TAB%d.bin", rank) < 0) {
+  if (asprintf(&file_name, "%s/TAB%d.bin", output_dir, rank) < 0) {
     printf("Error formatting string \"file_name\"");
     return 1;
   };
