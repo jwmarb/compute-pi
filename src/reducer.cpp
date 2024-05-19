@@ -9,7 +9,7 @@ extern "C" {
 }
 
 bs* combine(int a, int b) {
-  bs* result = (bs*) d_malloc(sizeof(bs));
+  bs* result = (bs*) malloc(sizeof(bs));
   mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
     char* file_name;
@@ -65,8 +65,8 @@ bs* combine(int a, int b) {
       r->Tab, 
       NULL
     );
-    d_free(l);
-    d_free(r);
+    free(l);
+    free(r);
     return result;
   }
 }
@@ -117,14 +117,17 @@ int main(int argc, char** argv) {
   mpf_div(pi, pi, one_f);
 
   gmp_printf("π = %.100Ff\n", pi);
-  d_free(r);
+  mpz_clears(r->Pab, r->Qab, r->Tab, sqrtC, one, NULL);
+  mpf_clears(one_f, NULL);
+  free(r);
   FILE* file = fopen("pi.bin", "w");
   mpf_out_raw(file, pi);
+  mpf_clear(pi);
   auto e = std::chrono::steady_clock::now() - s;
   auto hours = std::chrono::duration_cast<std::chrono::hours>(e).count();
   long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
   long ms = std::chrono::duration_cast<std::chrono::milliseconds>(e).count();
   printf("Took %luh %lum %.2fs to combine all bin files into pi.bin\n", hours, mins, (ms%6000)/1000.0);
-  detect_mem_leak();
+  // detect_mem_leak();
   return 0;
 }
