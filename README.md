@@ -38,9 +38,11 @@ To execute:
 OMP_NUM_THREADS=<cpus-per-tasks>
 NUM_PI_DIGITS=<num_of_pi_digits>
 NUM_PROCESSES=<ntasks>
+TMP_DIR=/tmp
+OUTPUT_PATH=./pi.bin
 
-mpirun -n $NUM_PROCESSES singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc.sif /opt/out/build/pi_calculator $NUM_PI_DIGITS
-singularity exec hpc.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES
+mpirun -n $NUM_PROCESSES singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc.sif /opt/out/build/pi_calculator $NUM_PI_DIGITS $TMP_DIR
+singularity exec hpc.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES $TMP_DIR $OUTPUT_PATH
 ```
 
 ### Running locally
@@ -66,20 +68,26 @@ To run the `pi.sif` container:
 singularity run pi.sif -t 1 -p 1 -d 100000
 ```
 
+This will output a `pi_out.bin` file, which the file path and tmp directory can be changed via the [Makefile](/Makefile) 
+
+<br>
+
 To run the `hpc_local.sif` container:
 
 ```sh
 OMP_NUM_THREADS=<cpus-per-tasks>
 NUM_PI_DIGITS=<num_of_pi_digits>
 NUM_PROCESSES=<ntasks>
+TMP_DIR=/tmp
+OUTPUT_PATH=./pi.bin
 
 # If you have a version of MPI in your system, uncomment below
-# mpirun -n $NUM_PROCESSES singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc_local.sif /opt/out/build/pi_calculator $NUM_PI_DIGITS
+# mpirun -n $NUM_PROCESSES singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc_local.sif /opt/out/build/pi_calculator $NUM_PI_DIGITS $TMP_DIR
 
 # If you do NOT have a local version of MPI in your system, uncomment below
-singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc_local.sif mpirun -n $NUM_PROCESSES 
+singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc_local.sif mpirun -n $NUM_PROCESSES /opt/out/build/pi_calculator $NUM_PI_DIGITS $TMP_DIR
 
-singularity exec hpc_local.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES
+singularity exec hpc_local.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES $TMP_DIR $OUTPUT_PATH
 ```
 
 #### Development
