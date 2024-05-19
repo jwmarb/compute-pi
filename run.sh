@@ -1,5 +1,8 @@
 #!/bin/bash
 
+CLUSTER_NAME=${PROMPT_COMMAND#echo -n \"(}
+CLUSTER_NAME=${CLUSTER_NAME%) \"}
+
 # The number of processes (equivalent to --ntasks) (this is also the # of computers)
 MPI_PROCESSES=4
 
@@ -13,7 +16,7 @@ MEM_PER_CPU=4gb
 NUM_PI_DIGITS=100000
 
 TMP_DIR=/tmp
-OUTPUT_PATH=./pi-$NUM_PI_DIGITS.bin
+OUTPUT_PATH=./pi-$(numfmt --to=si $NUM_PI_DIGITS).$CLUSTER_NAME.bin
 
 # The account to use for allocating time
 ACCOUNT=your_group_name
