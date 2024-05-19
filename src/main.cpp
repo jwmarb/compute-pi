@@ -11,9 +11,31 @@
 extern "C" {
   #include "chudnovsky.h"
   #include "gmp_extended.h"
+  #include "allocate.h"
 }
 
+/**
+ * For testing memory leaks, use the functions below
+ * Tracking allocations are on a linked list, and if
+ * the list has any allocations, it will be printed.
+ * 
+ * This should not be used in production due to how slow 
+*/
+
+// void* _malloc(size_t size) {
+//   return d_malloc(size);
+// }
+
+// void* _realloc(void* ptr, size_t old_size, size_t new_size) {
+//   return d_realloc(ptr, new_size);
+// }
+
+// void _free(void* ptr, size_t size) {
+//   return d_free(ptr);
+// }
+
 int main(int argc, char** argv) {
+  // mp_set_memory_functions(&_malloc, &_realloc, &_free);
   auto s = std::chrono::steady_clock::now();
   int rank, n_processes, rc;
   rc = MPI_Init(&argc, &argv);
@@ -85,6 +107,8 @@ int main(int argc, char** argv) {
     #pragma omp parallel reduction(+:n_threads)
     n_threads += 1;
     printf("With %d processor%s with %d thread%s per processor (%d in total), it took %luh %lum %.2fs to calculate %lu digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits/2);
+
+    detect_mem_leak();
   }
   return 0;
 }

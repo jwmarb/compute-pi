@@ -3,6 +3,7 @@
 #include <omp.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "allocate.h"
 
 // how many decimal digits the algorithm generates per iteration:
 #define DIGITS_PER_ITERATION log10(151931373056000) // https://mathoverflow.net/questions/261162/chudnovsky-algorithm-and-pi-precision
@@ -16,7 +17,6 @@ bs* bs_util(unsigned long a, unsigned long b, mpz_t C3_OVER_24) {
   mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
     if (a == 0) {
-
       mpz_set_ui(result->Pab, 1);
       mpz_set_ui(result->Qab, 1);
     } else {
@@ -40,6 +40,8 @@ bs* bs_util(unsigned long a, unsigned long b, mpz_t C3_OVER_24) {
 
       mpz_mul(result->Pab, k1, k2);
       mpz_mul(result->Pab, result->Pab, k3);
+
+      mpz_clears(k1, k2, k3, NULL);
 
       mpz_set_ui(result->Qab, a);
       mpz_pow_ui(result->Qab, result->Qab, 3);
