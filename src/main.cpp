@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     n_threads += 1;
     printf("With %d processor%s with %d thread%s per processor (%d in total), it took %luh %lum %.2fs to calculate %lu digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits/2);
 
-    detect_mem_leak();
+    // detect_mem_leak();
   }
   return 0;
 }
