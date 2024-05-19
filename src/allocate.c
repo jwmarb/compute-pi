@@ -16,14 +16,14 @@ typedef struct node {
 
 node* head = NULL;
 
-bool add_ptr_tracker(void* pointer, size_t size, const char* file, int line, const char *func) {
+bool add_ptr_tracker(void** pointer, size_t size, const char* file, int line, const char *func) {
   if (head == NULL) {
     head = (node*) malloc(sizeof(node));
     if (head == NULL) {
       return false;
     }
     head->next = NULL;
-    head->ptr = pointer;
+    head->ptr = *pointer;
     head->file = file;
     head->line = line;
     head->func = func;
@@ -34,7 +34,7 @@ bool add_ptr_tracker(void* pointer, size_t size, const char* file, int line, con
       return false;
     }
     new_node->next = head;
-    new_node->ptr = pointer;
+    new_node->ptr = *pointer;
     new_node->file = file;
     new_node->func = func;
     new_node->line = line;
@@ -45,7 +45,11 @@ bool add_ptr_tracker(void* pointer, size_t size, const char* file, int line, con
   return true;
 }
 
-void remove_ptr_tracker(void* pointer, const char* file, int line, const char *func) {
+void print_node(node* a) {
+  printf("{\n line: %d,\n func: \"%s\"\n file: \"%s\"\n size: %li\n}\n", a->line, a->func, a->file, a->size);
+}
+
+void remove_ptr_tracker(void** pointer, const char* file, int line, const char *func) {
   if (head == NULL) {
     fprintf(stderr, "Tried to free an invalid pointer:\n");
     fprintf(stderr, "\tLine: %d\n", line);
@@ -53,27 +57,24 @@ void remove_ptr_tracker(void* pointer, const char* file, int line, const char *f
     fprintf(stderr, "\tFile: %s\n", file);
   } else {
     node* tmp = head, *prev = NULL;
-    while (tmp != NULL && tmp->ptr != pointer) {
+    while (tmp != NULL && tmp->ptr != *pointer) {
       prev = tmp;
       tmp = tmp->next;
     }
 
-    printf("[free]: line=%d\tfunc=%s\tfile=%s\tsize=[%li]\n", tmp->line, tmp->func, tmp->file, tmp->size);
-
     if (prev == NULL) {
-      free(head);
-      head = NULL;
+      head = head->next;
     } else {
       prev->next = tmp->next;
-      free(tmp);
     }
+    free(tmp);
   }
 }
 
 void* debug_malloc(size_t size, const char* file, int line, const char *func) {
   void *pointer = malloc(size);
   printf("[malloc]: line=%d\tfunc=%s\tfile=%s\tsize=[%li]\n", line, func, file, size);
-  if (!add_ptr_tracker(pointer, size, file, line, func)) {
+  if (!add_ptr_tracker(&pointer, size, file, line, func)) {
     fprintf(stderr, "malloc() failed!\n");
     exit(EXIT_FAILURE);
   }
@@ -81,8 +82,8 @@ void* debug_malloc(size_t size, const char* file, int line, const char *func) {
 }
 
 void debug_free(void* pointer, const char* file, int line, const char *func) {
+  remove_ptr_tracker(&pointer, file, line, func);
   free(pointer);
-  remove_ptr_tracker(pointer, file, line, func);
 }
 
 void* debug_realloc(void* pointer, size_t size, const char* file, int line, const char *func) {
@@ -104,7 +105,8 @@ void detect_mem_leak() {
   node* tmp = head;
   printf("All current pointer(s):\n");
   while (tmp != NULL) {
-    printf("\tline=%d\tfunc=%s\tfile=%s\tsize=[%li]\n", tmp->line, tmp->func, tmp->file, tmp->size);
+    if (tmp->ptr != NULL)
+      printf("\tline=%d\tfunc=%s\tfile=%s\tsize=[%li]\n", tmp->line, tmp->func, tmp->file, tmp->size);
     tmp = tmp->next;
   }
 }
