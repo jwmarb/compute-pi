@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   
   mpz_t sum;
   mp_exp_t exp;
-  unsigned long digits = atoi(argv[1]) * 2;
+  unsigned long digits = strtoull(argv[1], NULL, 10) * 2;
   bs* r = chudnovsky(digits, rank+1, n_processes);
   
   // gmp_printf("π = %.100Ff\n", pi);
