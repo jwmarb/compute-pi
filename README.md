@@ -42,7 +42,7 @@ TMP_DIR=/tmp
 OUTPUT_PATH=./pi.bin
 
 mpirun -n $NUM_PROCESSES singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc.sif /opt/out/build/pi_calculator $NUM_PI_DIGITS $TMP_DIR
-singularity exec hpc.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES $TMP_DIR $OUTPUT_PATH
+singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES $TMP_DIR $OUTPUT_PATH
 ```
 
 ### Running locally
@@ -87,7 +87,7 @@ OUTPUT_PATH=./pi.bin
 # If you do NOT have a local version of MPI in your system, uncomment below
 singularity exec --env OMP_NUM_THREADS=$OMP_NUM_THREADS hpc_local.sif mpirun -n $NUM_PROCESSES /opt/out/build/pi_calculator $NUM_PI_DIGITS $TMP_DIR
 
-singularity exec hpc_local.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES $TMP_DIR $OUTPUT_PATH
+singularity exec --env OMP_NUM_THREADS=$(nproc) hpc_local.sif /opt/out/build/pi_reducer $NUM_PI_DIGITS $NUM_PROCESSES $TMP_DIR $OUTPUT_PATH
 ```
 
 #### Development
