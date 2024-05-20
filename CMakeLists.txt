@@ -36,6 +36,12 @@ add_library(
   src/allocate.h
 )
 
+add_library(
+  benchmark SHARED
+  src/benchmark.cpp
+  src/benchmark.hpp
+)
+
 include_directories(${CMAKE_SOURCE_DIR}/src ${GMP_INC_PATH} ${MPI_INC_PATH})
 
 add_executable(${PROJECT_NAME} 
@@ -44,5 +50,5 @@ add_executable(${PROJECT_NAME}
 
 add_executable(pi_reducer src/reducer.cpp)
 
-target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${MPI_LIB_PATH} chudnovsky gmp_extended debug_allocate)
-target_link_libraries(pi_reducer ${GMP_LIB_PATH} chudnovsky gmp_extended debug_allocate)
+target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${MPI_LIB_PATH} chudnovsky gmp_extended debug_allocate benchmark)
+target_link_libraries(pi_reducer ${GMP_LIB_PATH} chudnovsky gmp_extended debug_allocate benchmark)

@@ -109,6 +109,33 @@ bs* combine(unsigned long a, unsigned long b, bs** arr) {
   }
 }
 
+char* get_size_requirement(unsigned long bits) {
+  double bytes = bits/8.0;
+  char* size;
+  if (gmp_asprintf(&size, "%.2f %s",
+    bytes <= 1024ul ?
+    bytes :
+    bytes <= (1024ul * 1024ul) ?
+    bytes/1024ul :
+    bytes <= (1024ul * 1024ul * 1024ul) ?
+    bytes/(1024ul * 1024ul) :
+    bytes <= (1024ul * 1024ul * 1024ul * 1024ul) ?
+    bytes/(1024ul * 1024ul * 1024ul) : bits/(1024ul * 1024ul * 1024ul * 1024ul),
+    bytes <= 1024ul ?
+    "B" :
+    bytes <= (1024ul * 1024ul) ?
+    "KB" :
+    bytes <= (1024ul * 1024ul * 1024ul) ?
+    "MB" :
+    bytes <= (1024ul * 1024ul * 1024ul * 1024ul) ?
+    "GB" : "TB"
+  ) < 0) {
+    fprintf(stderr, "Could not allocate for size\n");
+    exit(1);
+  }
+  return size;
+}
+
 unsigned long init_precision_bits(unsigned long long digits) {
   double bits_per_digit = log2(10);
 
@@ -152,7 +179,14 @@ bs* chudnovsky(unsigned long long digits, int rank, int n_processes) {
     double subtasks = tasks / (double) (omp_get_num_threads());
     unsigned long k = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads() + 1))),
                   iter = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads())));
-    printf("t#=%d, total=%lu\tk=%lu\titer=%lu\tn_processes=%d\n", omp_get_thread_num(), iterations, k, iter, n_processes);
+    // printf("t#=%d, total=%lu\tk=%lu\titer=%lu\tn_processes=%d\n", omp_get_thread_num(), iterations, k, iter, n_processes);
+
+    if (rank == 1 && omp_get_thread_num() == 0) {
+      unsigned long bits = (unsigned long) (log2(10) * digits + 1);
+      char* size_per_process = get_size_requirement(bits * log2(subtasks)); // 3 
+      printf("\n------------------------\n[CHUDNOVSKY.C]\nTotal # iterations: %lu\n# Iterations per process: %lu\n# Iterations per thread: %lu\napproximate memory requirement(bits): %lu\napproximate memory requirement: %s\n------------------------\n\n", iterations, (unsigned long) tasks, (unsigned long) subtasks, bits, size_per_process);
+      free(size_per_process);
+    }
 
     bs* subr = bs_util(k, iter, C3_OVER_24);
     bs* r = arr[omp_get_thread_num()];

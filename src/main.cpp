@@ -8,6 +8,8 @@
 #include <gmp.h>
 #include <iostream>
 #include <chrono>
+#include <ctime>
+#include "benchmark.hpp"
 extern "C" {
   #include "chudnovsky.h"
   #include "gmp_extended.h"
@@ -34,9 +36,25 @@ extern "C" {
 //   return d_free(ptr);
 // }
 
+std::string get_readable_digits(unsigned long *digits) {
+  std::string readable;
+  unsigned long actual_digits = (*digits)/2;
+  for (int i = 1; actual_digits > 0; ++i) {
+    readable = std::to_string(actual_digits % 10) + readable;
+    if (i % 3 == 0) {
+      readable = "," + readable;
+    }
+    actual_digits /= 10;
+  }
+  if (readable.at(0) == ',') {
+    readable = readable.substr(1);
+  }
+  return readable;
+}
+
 int main(int argc, char** argv) {
   // mp_set_memory_functions(&_malloc, &_realloc, &_free);
-  auto s = std::chrono::steady_clock::now();
+  Benchmark timer{clock(), omp_get_wtime()};
   int rank, n_processes, rc;
   rc = MPI_Init(&argc, &argv);
   if (rc != MPI_SUCCESS) {
@@ -98,18 +116,24 @@ int main(int argc, char** argv) {
   
   mpz_clears(r->Pab, r->Qab, r->Tab, NULL);
   free(r);
-  MPI_Finalize();
+  char code;
   if (rank == 0) {
-    auto e = std::chrono::steady_clock::now() - s;
-    auto hours = std::chrono::duration_cast<std::chrono::hours>(e).count();
-    long mins = std::chrono::duration_cast<std::chrono::minutes>(e).count();
-    long ms = std::chrono::duration_cast<std::chrono::milliseconds>(e).count();
+    for (int i = 1; i < n_processes; ++i) {
+      MPI_Send(&code, 1, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
     int n_threads = 0;
     #pragma omp parallel reduction(+:n_threads)
     n_threads += 1;
-    printf("With %d processor%s with %d thread%s per processor (%d in total), it took %luh %lum %.2fs to calculate %lu digits of pi\n", n_processes, n_processes != 1 ? "s" : "", n_threads, n_threads != 1 ? "s" : "", n_threads * n_processes, hours, mins, (ms%6000)/1000.0, digits/2);
+    Benchmark::Result result = timer.capture(clock(), omp_get_wtime());
+
+    printf("\n------------------------\n[COMPUTATION RESULT]\nN processes: %d\nN threads per process: %d\nN total CPUs: %d\ncpu time: %luh %lum %.2fs\nwall time: %luh %lum %.2fs\n# of π digits: %s\n------------------------\n\n", n_processes, n_threads, n_threads * n_processes, result.cpu_hours(), result.cpu_mins(), result.cpu_seconds(), result.wall_hours(), result.wall_mins(), result.wall_seconds(), get_readable_digits(&digits).c_str());
 
     // detect_mem_leak();
+  } else {
+    MPI_Recv(&code, 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Barrier(MPI_COMM_WORLD);
   }
+  MPI_Finalize();
   return 0;
 }
