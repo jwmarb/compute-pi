@@ -28,7 +28,7 @@ echo "  squeue --job ${COMPUTE_JOB_ID##* }"
 echo "  seff ${COMPUTE_JOB_ID##* }"
 echo ""
 
-REDUCE_JOB_ID=$(sbatch --dependency=afterok:${COMPUTE_JOB_ID##* } --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4gb --account=$ACCOUNT reduce.slurm $NUM_PI_DIGITS $MPI_PROCESSES $TMP_DIR $OUTPUT_PATH)
+REDUCE_JOB_ID=$(sbatch --dependency=afterok:${COMPUTE_JOB_ID##* } --ntasks=1 --cpus-per-task=$OMP_THREADS --mem-per-cpu=4gb --account=$ACCOUNT reduce.slurm $NUM_PI_DIGITS $MPI_PROCESSES $TMP_DIR $OUTPUT_PATH)
 echo "[reduce.slurm] JobID=${REDUCE_JOB_ID##* }"
 echo "  squeue --job ${REDUCE_JOB_ID##* }"
 echo "  seff ${REDUCE_JOB_ID##* }"
