@@ -52,6 +52,18 @@ std::string get_readable_digits(unsigned long *digits) {
   return readable;
 }
 
+void out_bin(mpz_t src, const char*__restrict__ __fmt, char* output_dir, int rank) {
+  char* file_name;
+  if (asprintf(&file_name, __fmt, output_dir, rank) < 0) {
+    fprintf(stderr, "Error formatting string \"file_name\"");
+    exit(EXIT_FAILURE);
+  };
+  FILE* file = fopen(file_name, "w");
+  mpz_out_raw(file, src);
+  fclose(file);
+  free(file_name);
+}
+
 int main(int argc, char** argv) {
   // mp_set_memory_functions(&_malloc, &_realloc, &_free);
   Benchmark timer{clock(), omp_get_wtime()};
@@ -86,54 +98,41 @@ int main(int argc, char** argv) {
   // MPI_Finalize();
   // return 0;
 
-  char* file_name;
-  if (asprintf(&file_name, "%s/PAB%d.bin", output_dir, rank) < 0) {
-    printf("Error formatting string \"file_name\"");
-    return 1;
-  };
-  FILE* pab_file = fopen(file_name, "w");
-  mpz_out_raw(pab_file, r->Pab);
-  fclose(pab_file);
-  free(file_name);
+  #pragma omp parallel
+  {
+    #pragma omp single
+    {
+      #pragma omp task
+      out_bin(r->Pab, "%s/PAB%d.bin", output_dir, rank);
+      
+      #pragma omp task
+      out_bin(r->Qab, "%s/QAB%d.bin", output_dir, rank);
+      
+      #pragma omp task
+      out_bin(r->Tab, "%s/TAB%d.bin", output_dir, rank);
 
-  if (asprintf(&file_name, "%s/QAB%d.bin", output_dir, rank) < 0) {
-    printf("Error formatting string \"file_name\"");
-    return 1;
-  };
-  FILE* qab_file = fopen(file_name, "w");
-  mpz_out_raw(qab_file, r->Qab);
-  fclose(qab_file);
-  free(file_name);
-  
-  if (asprintf(&file_name, "%s/TAB%d.bin", output_dir, rank) < 0) {
-    printf("Error formatting string \"file_name\"");
-    return 1;
-  };
-  FILE* tab_file = fopen(file_name, "w");
-  mpz_out_raw(tab_file, r->Tab);
-  fclose(tab_file);
-  free(file_name);
-  
-  mpz_clears(r->Pab, r->Qab, r->Tab, NULL);
-  free(r);
-  char code;
-  if (rank == 0) {
-    for (int i = 1; i < n_processes; ++i) {
-      MPI_Send(&code, 1, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+      #pragma omp taskwait
+
+      mpz_clears(r->Pab, r->Qab, r->Tab, NULL);
+      free(r);
+      char code;
+      if (rank == 0) {
+        for (int i = 1; i < n_processes; ++i) {
+          MPI_Send(&code, 1, MPI_CHAR, i, 0, MPI_COMM_WORLD);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        Benchmark::Result result = timer.capture(clock(), omp_get_wtime());
+
+        printf("\n------------------------\n[COMPUTATION RESULT]\nN processes: %d\nN threads per process: %d\nN total CPUs: %d\ncpu time: %luh %lum %.2fs\nwall time: %luh %lum %.2fs\n# of π digits: %s\n------------------------\n\n", n_processes, omp_get_num_threads(), omp_get_num_threads() * n_processes, result.cpu_hours(), result.cpu_mins(), result.cpu_seconds(), result.wall_hours(), result.wall_mins(), result.wall_seconds(), get_readable_digits(&digits).c_str());
+
+        // detect_mem_leak();
+      } else {
+        MPI_Recv(&code, 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Barrier(MPI_COMM_WORLD);
+      }
+      MPI_Finalize();
     }
-    MPI_Barrier(MPI_COMM_WORLD);
-    int n_threads = 0;
-    #pragma omp parallel reduction(+:n_threads)
-    n_threads += 1;
-    Benchmark::Result result = timer.capture(clock(), omp_get_wtime());
-
-    printf("\n------------------------\n[COMPUTATION RESULT]\nN processes: %d\nN threads per process: %d\nN total CPUs: %d\ncpu time: %luh %lum %.2fs\nwall time: %luh %lum %.2fs\n# of π digits: %s\n------------------------\n\n", n_processes, n_threads, n_threads * n_processes, result.cpu_hours(), result.cpu_mins(), result.cpu_seconds(), result.wall_hours(), result.wall_mins(), result.wall_seconds(), get_readable_digits(&digits).c_str());
-
-    // detect_mem_leak();
-  } else {
-    MPI_Recv(&code, 1, MPI_CHAR, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Barrier(MPI_COMM_WORLD);
   }
-  MPI_Finalize();
+  
   return 0;
 }
