@@ -164,37 +164,25 @@ bs* chudnovsky(unsigned long long digits, int rank, int n_processes) {
   int n_threads = 0;
   #pragma omp parallel reduction(+:n_threads)
   n_threads += 1;
-  arr = (bs**) calloc(n_threads, sizeof(bs*));
-  for (int i = 0; i < n_threads; ++i) {
-    arr[i] = (bs*) malloc(sizeof(bs));
-    mpz_inits(arr[i]->Pab, arr[i]->Qab, arr[i]->Tab, NULL);
-    mpz_set_ui(arr[i]->Pab, 0);
-    mpz_set_ui(arr[i]->Qab, 0);
-    mpz_set_ui(arr[i]->Tab, 0);
-  }
+  arr = (bs**) calloc(sizeof(bs*), n_threads);
 
-  #pragma omp parallel shared(iterations, n_processes)
+  double tasks = iterations / (double) (n_processes);
+  
+  #pragma omp parallel
   {
-    double tasks = iterations / (double) (n_processes);
     double subtasks = tasks / (double) (omp_get_num_threads());
     unsigned long k = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads() + 1))),
                   iter = ceil((tasks * (rank - 1)) - (subtasks * (omp_get_thread_num() - omp_get_num_threads())));
     // printf("t#=%d, total=%lu\tk=%lu\titer=%lu\tn_processes=%d\n", omp_get_thread_num(), iterations, k, iter, n_processes);
 
-    if (rank == 1 && omp_get_thread_num() == 0) {
-      unsigned long bits = (unsigned long) (log2(10) * digits + 1);
-      char* size_per_process = get_size_requirement(bits * log2(subtasks)); // 3 
-      printf("\n------------------------\n[CHUDNOVSKY.C]\nTotal # iterations: %lu\n# Iterations per process: %lu\n# Iterations per thread: %lu\napproximate memory requirement(bits): %lu\napproximate memory requirement: %s\n------------------------\n\n", iterations, (unsigned long) tasks, (unsigned long) subtasks, bits, size_per_process);
-      free(size_per_process);
-    }
+    // if (rank == 1 && omp_get_thread_num() == 0) {
+    //   unsigned long bits = (unsigned long) (log2(10) * digits + 1);
+    //   char* size_per_process = get_size_requirement(bits * log2(subtasks)); // 3 
+    //   printf("\n------------------------\n[CHUDNOVSKY.C]\nTotal # iterations: %lu\n# Iterations per process: %lu\n# Iterations per thread: %lu\napproximate memory requirement(bits): %lu\napproximate memory requirement: %s\n------------------------\n\n", iterations, (unsigned long) tasks, (unsigned long) subtasks, bits, size_per_process);
+    //   free(size_per_process);
+    // }
 
-    bs* subr = bs_util(k, iter, C3_OVER_24);
-    bs* r = arr[omp_get_thread_num()];
-    mpz_set(r->Pab, subr->Pab);
-    mpz_set(r->Qab, subr->Qab);
-    mpz_set(r->Tab, subr->Tab);
-    mpz_clears(subr->Pab, subr->Qab, subr->Tab, NULL);
-    free(subr);
+    arr[omp_get_thread_num()] = bs_util(k, iter, C3_OVER_24);
   }
 
   bs* result = combine(0, n_threads, arr);
