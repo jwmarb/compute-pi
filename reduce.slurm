@@ -9,4 +9,4 @@ else
   omp_threads=1
 fi
 
-srun singularity exec --env OMP_NUM_THREADS=$omp_threads hpc.sif /opt/out/build/pi_reducer $1 $2 $3 $4
+singularity exec --env OMP_NUM_THREADS=$omp_threads hpc.sif /opt/out/build/pi_reducer $1 $2 $3 $4
