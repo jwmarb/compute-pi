@@ -48,7 +48,10 @@ add_executable(${PROJECT_NAME}
   src/main.cpp
 )
 
-add_executable(pi_reducer src/reducer.cpp)
+add_executable(pi_reducer_mpi src/reducer_mpi.cpp)
+
+add_executable(pi_reducer_omp src/reducer_omp.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${GMP_LIB_PATH} ${MPI_LIB_PATH} chudnovsky gmp_extended debug_allocate benchmark)
-target_link_libraries(pi_reducer ${GMP_LIB_PATH} chudnovsky gmp_extended debug_allocate benchmark)
+target_link_libraries(pi_reducer_mpi ${GMP_LIB_PATH} chudnovsky gmp_extended debug_allocate benchmark)
+target_link_libraries(pi_reducer_omp ${GMP_LIB_PATH} chudnovsky gmp_extended debug_allocate benchmark)

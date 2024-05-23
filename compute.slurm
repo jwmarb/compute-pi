@@ -11,4 +11,11 @@ else
   omp_threads=1
 fi
 
-mpirun -np $SLURM_NTASKS -x OMP_NUM_THREADS=$omp_threads --bind-to core singularity exec hpc.sif /opt/out/build/pi_calculator $1 $2
+if [ -n "$3" ]; then
+  mkdir -p $2/$SLURM_NTASKS\n$omp_threads\c
+  TIMEFORMAT="value:%R"
+  time mpirun -np $SLURM_NTASKS -x OMP_NUM_THREADS=$omp_threads singularity exec hpc.sif /opt/out/build/pi_calculator $1 $2/$SLURM_NTASKS\n$omp_threads\c
+  rm -rf $2/$SLURM_NTASKS\n$omp_threads\c
+else
+  mpirun -np $SLURM_NTASKS -x OMP_NUM_THREADS=$omp_threads --bind-to core singularity exec hpc.sif /opt/out/build/pi_calculator $1 $2
+fi
