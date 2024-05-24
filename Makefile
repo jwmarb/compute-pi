@@ -12,8 +12,8 @@ build:
 run:
 	mkdir -p tmp
 	cd out/build && $(RUN) -n $(OMPI_COMM_WORLD_SIZE) --allow-run-as-root ./pi_calculator $(PI_DIGITS) ../../tmp
-	# cd out/build && $(RUN) -n $(OMPI_COMM_WORLD_SIZE) --allow-run-as-root ./pi_reducer $(PI_DIGITS) $(OMPI_COMM_WORLD_SIZE) ../../tmp ./pi_out.bin; rm ../../tmp/[TQP]AB[0123456789+]*.bin
-	cd out/build && unset OMP_NUM_THREADS && ./pi_reducer_omp $(PI_DIGITS) $(OMPI_COMM_WORLD_SIZE) ../../tmp ./pi_out.bin
+	# cd out/build && $(RUN) -n $(OMPI_COMM_WORLD_SIZE) --allow-run-as-root ./pi_reducer_mpi $(PI_DIGITS) $(OMPI_COMM_WORLD_SIZE) ../../tmp ./pi_out.bin; rm ../../tmp/[TQP]AB[0123456789+]*.bin
+	cd out/build && export OMP_NUM_THREADS=1 && ./pi_reducer_omp $(PI_DIGITS) $(OMPI_COMM_WORLD_SIZE) ../../tmp ./pi_out.bin
 
 clean:
 	rm -rf out ext

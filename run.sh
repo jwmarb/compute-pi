@@ -30,7 +30,7 @@ OUTPUT_PATH=./pi-$(numfmt --to=si $NUM_PI_DIGITS).$CLUSTER_NAME.bin
 ACCOUNT=your_group_name
 
 if [ -n "$1" ] && [ -n "$2" ]; then
-  COMPUTE_JOB_ID=$(sbatch --nodes=$MPI_PROCESSES --ntasks=$MPI_PROCESSES --cpus-per-task=$OMP_THREADS --mem-per-cpu=$MEM_PER_CPU --account=$ACCOUNT --output=logs/$MPI_PROCESSES\n$OMP_THREADS\c.out compute.slurm $NUM_PI_DIGITS $TMP_DIR PERFTEST)
+  COMPUTE_JOB_ID=$(sbatch --nodes=$MPI_PROCESSES --ntasks=$MPI_PROCESSES --cpus-per-task=$OMP_THREADS --mem-per-cpu=$MEM_PER_CPU --account=$ACCOUNT --output=logs/$MPI_PROCESSES\_$OMP_THREADS compute.slurm $NUM_PI_DIGITS $TMP_DIR PERFTEST)
 else
   COMPUTE_JOB_ID=$(sbatch --ntasks=$MPI_PROCESSES --cpus-per-task=$OMP_THREADS --mem-per-cpu=$MEM_PER_CPU --account=$ACCOUNT --output=logs/%j-c.out compute.slurm $NUM_PI_DIGITS $TMP_DIR)
 fi
