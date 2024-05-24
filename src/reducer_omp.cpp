@@ -112,7 +112,8 @@ void combine(bs* result, unsigned int a, unsigned int b, bs** arr) {
 // }
 
 void input_bins(bs** arr) {
-  #pragma omp parallel for
+  #pragma omp parallel
+  #pragma omp single
   for (unsigned int i = 0; i < n_processes; ++i) {
     // printf("hello from thread %d\n", omp_get_thread_num());
     arr[i] = (bs*) malloc(sizeof(bs));

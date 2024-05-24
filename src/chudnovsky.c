@@ -15,14 +15,9 @@ typedef struct bs {
 } bs;
 
 void bs_util(bs* result, unsigned long a, unsigned long b) {
-  // mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
   if (b - a == 1) {
-    #pragma omp taskgroup
     if (a == 0) {
-      #pragma omp task depend(out:result->Pab)
       mpz_set_ui(result->Pab, 1);
-
-      #pragma omp task depend(out:result->Qab)
       mpz_set_ui(result->Qab, 1);
     } 
     else {
@@ -30,56 +25,36 @@ void bs_util(bs* result, unsigned long a, unsigned long b) {
       mpz_inits(k1, k2, k3, NULL);
       
       // k1 = (6*a-5)
-      #pragma omp task shared(k1,a) depend(out:k1) depend(in:a)
-      {
-        mpz_set_ui(k1, a);
-        mpz_mul_ui(k1, k1, 6);
-        mpz_sub_ui(k1, k1, 5);
-      }
+      mpz_set_ui(k1, a);
+      mpz_mul_ui(k1, k1, 6);
+      mpz_sub_ui(k1, k1, 5);
 
       // k2 = (2*a-1)
-      #pragma omp task shared(k2,a) depend(out:k2) depend(in:a)
-      {
-        mpz_set_ui(k2, a);
-        mpz_mul_ui(k2, k2, 2);
-        mpz_sub_ui(k2, k2, 1);
-      }
+      mpz_set_ui(k2, a);
+      mpz_mul_ui(k2, k2, 2);
+      mpz_sub_ui(k2, k2, 1);
 
       // k3 = (6*a-1)
-      #pragma omp task shared(k3,a) depend(out:k3) depend(in:a)
-      {
-        mpz_set_ui(k3, a);
-        mpz_mul_ui(k3, k3, 6);
-        mpz_sub_ui(k3, k3, 1);
-      }
+      mpz_set_ui(k3, a);
+      mpz_mul_ui(k3, k3, 6);
+      mpz_sub_ui(k3, k3, 1);
 
-      #pragma omp task shared(k1,k2,k3) depend(in:k1,k2,k3,result->Pab)
-      {
-        mpz_mul(result->Pab, k1, k2);
-        mpz_mul(result->Pab, result->Pab, k3);
-      }
+      mpz_mul(result->Pab, k1, k2);
+      mpz_mul(result->Pab, result->Pab, k3);
 
-      #pragma omp task depend(inout:result->Qab) depend(in:a)
-      {
-        mpz_set_ui(result->Qab, a);
-        mpz_pow_ui(result->Qab, result->Qab, 3);
-        mpz_mul(result->Qab, result->Qab, C3_OVER_24);
-      }
+      mpz_set_ui(result->Qab, a);
+      mpz_pow_ui(result->Qab, result->Qab, 3);
+      mpz_mul(result->Qab, result->Qab, C3_OVER_24);
 
-      #pragma omp task shared(k1,k2,k3) depend(inout:k1,k2,k3)
       mpz_clears(k1, k2, k3, NULL);
     }
 
-    #pragma omp taskgroup
-    #pragma omp task depend(inout:result->Tab) depend(in:a,result->Pab)
-    {
-      mpz_set_ui(result->Tab, a);
-      mpz_mul_ui(result->Tab, result->Tab, 545140134);
-      mpz_add_ui(result->Tab, result->Tab, 13591409);
-      mpz_mul(result->Tab, result->Tab, result->Pab);
-      if (a & 1) {
-        mpz_neg(result->Tab, result->Tab);
-      }
+    mpz_set_ui(result->Tab, a);
+    mpz_mul_ui(result->Tab, result->Tab, 545140134);
+    mpz_add_ui(result->Tab, result->Tab, 13591409);
+    mpz_mul(result->Tab, result->Tab, result->Pab);
+    if (a & 1) {
+      mpz_neg(result->Tab, result->Tab);
     }
   } else {
     unsigned long m = (a + b)/2;
@@ -98,31 +73,16 @@ void bs_util(bs* result, unsigned long a, unsigned long b) {
       NULL
     );
 
-    #pragma omp taskgroup
-    {
-      #pragma omp task shared(l,a,m) depend(inout:l,l->Pab,l->Qab,l->Tab) depend(in:a,m)
-      bs_util(l, a, m);
+    bs_util(l, a, m);
+    bs_util(r, m, b);
 
-      #pragma omp task shared(r,m,b) depend(inout:r,r->Pab,r->Qab,r->Tab) depend(in:m,b)
-      bs_util(r, m, b);
+    mpz_mul(result->Pab, l->Pab, r->Pab);
+    mpz_mul(result->Qab, l->Qab, r->Qab);
+    mpz_mul(result->Tab, r->Qab, l->Tab);
 
-      #pragma omp task depend(inout:result->Pab) depend(in:l->Pab,r->Pab)
-      mpz_mul(result->Pab, l->Pab, r->Pab);
-
-      #pragma omp task depend(inout:result->Qab) depend(in:l->Qab,r->Qab)
-      mpz_mul(result->Qab, l->Qab, r->Qab);
-
-      #pragma omp task depend(inout:result->Tab) depend(in:l->Tab,r->Qab)
-      mpz_mul(result->Tab, r->Qab, l->Tab);
-
-
-      // c = l.Pab * r.Tab
-      #pragma omp task depend(in:result->Tab)
-      {
-        mpz_mul(c, l->Pab, r->Tab);
-        mpz_add(result->Tab, result->Tab, c);
-      }
-    }
+    // c = l.Pab * r.Tab
+    mpz_mul(c, l->Pab, r->Tab);
+    mpz_add(result->Tab, result->Tab, c);
 
     mpz_clears(c, l->Pab, l->Qab, l->Tab, r->Pab, r->Qab, r->Tab, NULL);
     free(l);
@@ -153,11 +113,11 @@ void combine(bs* result, unsigned long a, unsigned long b, bs** arr) {
     #pragma omp taskgroup
     {
 
-      #pragma omp task shared(l,a,m,arr) depend(inout:l,l->Pab,l->Qab,l->Tab)
-      combine(l, a, m, arr);
+      #pragma omp task shared(r,a,m,arr) depend(inout:r,r->Pab,r->Qab,r->Tab)
+      combine(r, a, m, arr);
 
-      #pragma omp task shared(r,m,b,arr) depend(inout:r,r->Pab,r->Qab,r->Tab)
-      combine(r, m, b, arr);
+      #pragma omp task shared(l,m,b,arr) depend(inout:l,l->Pab,l->Qab,l->Tab)
+      combine(l, m, b, arr);
       
       #pragma omp task depend(in:r->Pab,l->Pab) depend(inout:result->Pab)
       mpz_mul(result->Pab, l->Pab, r->Pab);
@@ -243,6 +203,7 @@ bs* chudnovsky(unsigned long long digits, int rank, int n_processes) {
   int n_threads = 0;
   #pragma omp parallel reduction(+:n_threads)
   n_threads += 1;
+
   bs** arr = (bs**) calloc(sizeof(bs*), n_threads);
   
   #pragma omp parallel
@@ -261,20 +222,14 @@ bs* chudnovsky(unsigned long long digits, int rank, int n_processes) {
     // }
 
     arr[t] = (bs*) malloc(sizeof(bs));
-    bs* result = arr[t];
-    mpz_inits(
-      result->Pab,
-      result->Qab,
-      result->Tab,
-      NULL
-    );
+    mpz_inits(arr[t]->Pab, arr[t]->Qab, arr[t]->Tab, NULL);
 
     #pragma omp task
-    bs_util(result, k, iter);
+    bs_util(arr[t], k, iter);
   }
 
   bs* result = (bs*) malloc(sizeof(bs));
-  mpz_inits(result->Pab, result->Qab, result->Tab, NULL);
+  mpz_inits(result->Qab, result->Pab, result->Tab, NULL);
 
   #pragma omp parallel
   #pragma omp single
